@@ -69,7 +69,9 @@
     {%- set created = {} -%}
     {%- set final_text = [] -%}
     {%- for view, deps in dag.items() -%}
+     {{ log("Running dag: " ~ dag, true) }}
         {%- for d in deps -%}
+        
             {%- set table_name = d.split(".")[-1].replace("__", ".").upper() -%}
             {%- if ddl.get(table_name) and table_name not in created -%}
                 {%- set replaced = fsc_utils.replace_database_references(ddl.keys(), ddl[table_name], "__NEW__") -%}
