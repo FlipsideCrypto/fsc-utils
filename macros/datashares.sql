@@ -165,7 +165,7 @@
 {% set schema = {} %}
 {% for key, value in graph.nodes.items() -%}
     {%
-    if key.startswith("test.") or value.schema.startswith("_")
+    if ((key.startswith("test.") or value.schema.startswith("_")) and value.schema != "_datashare")
     -%}
     {% do schema.update({value.schema:None}) %}
     {%- endif %}
