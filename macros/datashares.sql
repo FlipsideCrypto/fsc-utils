@@ -156,6 +156,13 @@
     {%- set combined_ddl = gold_views_ddl + gold_tables_ddl -%}
     {%- do combined_ddl.insert(0, "CREATE DATABASE IF NOT EXISTS __NEW__;") -%}
     {{- "BEGIN\n" ~ (combined_ddl | join("\n")) ~ "\nEND" -}}
+     {{ log("Running gold_views: " ~ gold_views, true) }}
+     {{ log("Running gold_views_ddl: " ~ gold_views_ddl), true }}
+     {{ log("Running gold_tables: " ~ gold_tables, true) }}
+     {{ log("Running gold_tables_ddl: " ~ gold_tables_ddl, true) }}
+     {{ log("Running combined_ddl: " ~ combined_ddl, true) }}
+
+
 {%- endmacro -%}
 
 {% macro get_exclusion_schema() %}
@@ -165,7 +172,7 @@
 {% set schema = {} %}
 {% for key, value in graph.nodes.items() -%}
     {%
-    if ((key.startswith("test.") or value.schema.startswith("_")) and value.schema != "_datashare")
+    if key.startswith("test.") or value.schema.startswith("_")
     -%}
     {% do schema.update({value.schema:None}) %}
     {%- endif %}
