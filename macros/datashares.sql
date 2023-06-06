@@ -122,6 +122,8 @@
         {%- endif -%}
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
+        {{ log("Running dag: " ~ dag, true) }}
+        {{ log("Running schema: " ~ schema, true) }}
     {{- tojson(final) -}}
 {%- endmacro -%}
 
