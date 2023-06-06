@@ -11,7 +11,6 @@
         {%- endif -%}
     {%- endfor %}
 
-  {{ log("Running dep: " ~ dep, true) }}
 
 {%- endmacro -%}
 
@@ -59,6 +58,10 @@
     {% set outer.replaced = outer.replaced|replace(target.database.upper() ~ ".", "__SOURCE__.") %}
     {% set outer.replaced = outer.replaced|replace(target.database.lower() ~ ".", "__SOURCE__.") %}
     {{- outer.replaced -}}
+
+    {{ log("Running references_to_replace: " ~ references_to_replace, true) }}
+    {{ log("Running ddl: " ~ ddl, true) }}
+    {{ log("Running new_database: " ~ new_database, true) }}
 {%- endmacro -%}
 
 {% macro generate_view_ddl(dag, schema) %}
