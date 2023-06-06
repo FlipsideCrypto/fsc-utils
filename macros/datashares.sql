@@ -136,9 +136,11 @@
     {%- set view_ddl = [] -%}
     {% for s in schema %}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
+          {{ log("Running schema_ddl: " ~ schema_ddl, true) }}
     {%- endfor -%}
     {% for table in tables %}
         {%- do view_ddl.append("CREATE OR REPLACE VIEW __NEW__." ~ table ~ " AS SELECT * FROM " ~ "__SOURCE__." ~ table ~";") -%}
+        {{ log("Running view_ddl: " ~ view_ddl, true) }}
     {%- endfor -%}
     {{- toyaml(schema_ddl + view_ddl) -}}
 {%- endmacro -%}
