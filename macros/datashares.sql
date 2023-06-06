@@ -10,6 +10,9 @@
             "{{- loop.depth0 ~ '-'if include_depth else '' }}{{node.config.materialized }}-{{ dep -}}",
         {%- endif -%}
     {%- endfor %}
+
+  {{ log("Running dep: " ~ dep, true) }}
+
 {%- endmacro -%}
 
 {% macro get_view_ddl() %}
