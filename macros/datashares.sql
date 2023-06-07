@@ -60,7 +60,7 @@
     {% set outer.replaced = outer.replaced|replace(target.database.lower() ~ ".", "__SOURCE__.") %}
     {{- outer.replaced -}}
 
-    {{ log("Running outer.replaced: " ~ outer.replaced, true) }}
+    {{ log("Running outer: " ~ outer, true) }}
     {# {{ log("Running ddl: " ~ ddl, true) }}
     {{ log("Running new_database: " ~ new_database, true) }} #}
 {%- endmacro -%}
