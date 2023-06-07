@@ -40,7 +40,7 @@
 {#
     Return the DDL statement for a view with the references replaced.
 
-    references_to_replace: a dictionary of references to replace
+    references_to_replace: a list of references to replace
     ddl: the DDL statement to replace the references in
     new_database: the new database to replace the references with
 #}
@@ -175,19 +175,4 @@
     {%- set combined_ddl = gold_views_ddl + gold_tables_ddl -%}
     {%- do combined_ddl.insert(0, "CREATE DATABASE IF NOT EXISTS __NEW__;") -%}
     {{- "BEGIN\n" ~ (combined_ddl | join("\n")) ~ "\nEND" -}}
-{%- endmacro -%}
-
-{% macro get_exclusion_schema() %}
-{#
-    Return a list of schemas to exclude from the data shares
- #}
-{% set schema = {} %}
-{% for key, value in graph.nodes.items() -%}
-    {%
-    if key.startswith("test.") or value.schema.startswith("_")
-    -%}
-    {% do schema.update({value.schema:None}) %}
-    {%- endif %}
-{%- endfor %}
-{{- schema.keys() | list | tojson  -}}
 {%- endmacro -%}
