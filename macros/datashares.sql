@@ -93,6 +93,7 @@
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
     {%- endfor -%}
     {{- toyaml(schema_ddl + final_text) -}}
+      {{ log("Running toyaml: " ~ toyaml, true) }}
 {%- endmacro -%}
 
 {% macro generate_dag_and_schemas(node_paths, materializations) %}
