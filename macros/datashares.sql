@@ -41,8 +41,8 @@
     Return the DDL statement for a view with the references replaced.
 
     references_to_replace: a list of references to replace
-    ddl: the DDL statement to replace the references in
-    new_database: the new database to replace the references with
+    ddl: the DDL statement to be replaced
+    new_database: the new database name to replace the references with
 #}
     {% set re = modules.re %}
     {% set outer = namespace(replaced=ddl) %}
