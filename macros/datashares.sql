@@ -87,13 +87,13 @@
             {%- endif -%}
         {%- endfor -%}
     {%- endfor -%}
-    {{ log("Running final_text: " ~ final_text, true) }}
+    {# {{ log("Running final_text: " ~ final_text, true) }} #}
     {%- set schema_ddl = [] -%}
     {%- for s in schema -%}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
     {%- endfor -%}
     {{- toyaml(schema_ddl + final_text) -}}
-      {{ log("Running schema_ddl: " ~ schema_ddl, true) }}
+      {# {{ log("Running schema_ddl: " ~ schema_ddl, true) }} #}
 {%- endmacro -%}
 
 {% macro generate_dag_and_schemas(node_paths, materializations) %}
