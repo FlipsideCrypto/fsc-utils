@@ -115,7 +115,7 @@
         and not key.endswith("_create_gold")
         -%}
         {%- set name = value.schema + "." + value.alias -%}
-        {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value, exclude_source=true)[:-1] ~ "]") -%}
+        {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value, include_depth=false, exclude_source=true)[:-1] ~ "]") -%}
             {% if _result -%}
                 {%- do _result.insert(0, key) -%}
                 {%- do dag.update({name.upper() : _result | reverse|list})  -%}
@@ -133,7 +133,7 @@
         {%- endif -%}
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
-        {{ log("Running final: " ~ final, true) }}
+        {# {{ log("Running final: " ~ final, true) }} #}
     {{- tojson(final) -}}
 {%- endmacro -%}
 
