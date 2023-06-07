@@ -10,8 +10,6 @@
             "{{- loop.depth0 ~ '-'if include_depth else '' }}{{node.config.materialized }}-{{ dep -}}",
         {%- endif -%}
     {%- endfor %}
-
-
 {%- endmacro -%}
 
 {% macro get_view_ddl() %}
@@ -36,7 +34,6 @@
         {%- endfor -%}
         {{- tojson(ddl) -}}
     {%- endif -%}
-     {# {{ log("Running ddl: " ~ ddl, true) }} #}
 {%- endmacro -%}
 
 {% macro replace_database_references(references_to_replace, ddl, new_database) %}
@@ -59,10 +56,6 @@
     {% set outer.replaced = outer.replaced|replace(target.database.upper() ~ ".", "__SOURCE__.") %}
     {% set outer.replaced = outer.replaced|replace(target.database.lower() ~ ".", "__SOURCE__.") %}
     {{- outer.replaced -}}
-
-    {# {{ log("Running outer: " ~ outer, true) }} #}
-    {# {{ log("Running ddl: " ~ ddl, true) }}
-    {{ log("Running new_database: " ~ new_database, true) }} #}
 {%- endmacro -%}
 
 {% macro generate_view_ddl(dag, schema) %}
@@ -76,9 +69,7 @@
     {%- set created = {} -%}
     {%- set final_text = [] -%}
     {%- for view, deps in dag.items() -%}
-     {# {{ log("Running dag: " ~ dag, true) }} #}
         {%- for d in deps -%}
-        
             {%- set table_name = d.split(".")[-1].replace("__", ".").upper() -%}
             {%- if ddl.get(table_name) and table_name not in created -%}
                 {%- set replaced = fsc_utils.replace_database_references(ddl.keys(), ddl[table_name], "__NEW__") -%}
@@ -87,13 +78,11 @@
             {%- endif -%}
         {%- endfor -%}
     {%- endfor -%}
-    {# {{ log("Running final_text: " ~ final_text, true) }} #}
     {%- set schema_ddl = [] -%}
     {%- for s in schema -%}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
     {%- endfor -%}
     {{- toyaml(schema_ddl + final_text) -}}
-      {# {{ log("Running schema_ddl: " ~ schema_ddl, true) }} #}
 {%- endmacro -%}
 
 {% macro generate_dag_and_schemas(node_paths, materializations) %}
@@ -102,7 +91,6 @@
 
     node_paths: a list of node paths to include in the DAG
     materializations: a list of materializations to include in the DAG
-       and not value.sources
  #}
     {%- set dag = {} -%}
     {%- set schema = [] -%}
@@ -111,16 +99,13 @@
         if value.refs
         and set(value.fqn).intersection(node_paths)
         and value.config.materialized in materializations
-        and value.config.enabled     
+        and value.config.enabled
         and not value.sources
         and not key.endswith("_create_gold")
-        
+        and not key.startswith("model.solana_models.core")
         -%}
         {%- set name = value.schema + "." + value.alias -%}
-        {{ log("Running key: " ~ key, true) }}
-        {{ log("Running name: " ~ name, true) }}
-        {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value,  exclude_source=true)[:-1] ~ "]") -%}
-        {{ log("Running _result: " ~ _result, true) }}
+        {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value, exclude_source=true)[:-1] ~ "]") -%}
             {% if _result -%}
                 {%- do _result.insert(0, key) -%}
                 {%- do dag.update({name.upper() : _result | reverse|list})  -%}
@@ -138,8 +123,6 @@
         {%- endif -%}
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
-        {# {{ log("Running node_paths: " ~ node_paths, true) }} #}
-        {# {{ log("Running final: " ~ final, true) }} #}
     {{- tojson(final) -}}
 {%- endmacro -%}
 
@@ -154,11 +137,9 @@
     {%- set view_ddl = [] -%}
     {% for s in schema %}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
-          {# {{ log("Running schema_ddl: " ~ schema_ddl, true) }} #}
     {%- endfor -%}
     {% for table in tables %}
         {%- do view_ddl.append("CREATE OR REPLACE VIEW __NEW__." ~ table ~ " AS SELECT * FROM " ~ "__SOURCE__." ~ table ~";") -%}
-        {# {{ log("Running view_ddl: " ~ view_ddl, true) }} #}
     {%- endfor -%}
     {{- toyaml(schema_ddl + view_ddl) -}}
 {%- endmacro -%}
@@ -171,20 +152,11 @@
  #}
     {%- set gold_views = fromjson(fsc_utils.generate_dag_and_schemas(["gold"], ["view"])) -%}
     {%- set gold_views_ddl = fromyaml(fsc_utils.generate_view_ddl(gold_views["dag"], gold_views["schema"])) -%}
-    {# {%- set silver_views = fromjson(fsc_utils.generate_dag_and_schemas(["silver"], ["view"])) -%}
-    {%- set silver_views_ddl = fromyaml(fsc_utils.generate_view_ddl(silver_views["dag"], silver_views["schema"])) -%} #}
     {%- set gold_tables = fromjson(fsc_utils.generate_dag_and_schemas(["gold"], ["incremental", "table"])) -%}
     {%- set gold_tables_ddl = fromyaml(fsc_utils.generate_table_views_ddl(gold_tables["dag"].keys(), gold_tables["schema"])) -%}
-    {%- set combined_ddl =  gold_views_ddl + gold_tables_ddl -%}
+    {%- set combined_ddl = gold_views_ddl + gold_tables_ddl -%}
     {%- do combined_ddl.insert(0, "CREATE DATABASE IF NOT EXISTS __NEW__;") -%}
     {{- "BEGIN\n" ~ (combined_ddl | join("\n")) ~ "\nEND" -}}
-     {# {{ log("Running gold_views: " ~ gold_views, true) }}
-     {{ log("Running gold_views_ddl: " ~ gold_views_ddl), true }}
-     {{ log("Running gold_tables: " ~ gold_tables, true) }}
-     {{ log("Running gold_tables_ddl: " ~ gold_tables_ddl, true) }}
-     {{ log("Running combined_ddl: " ~ combined_ddl, true) }} #}
-
-
 {%- endmacro -%}
 
 {% macro get_exclusion_schema() %}
