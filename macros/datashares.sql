@@ -113,9 +113,10 @@
         and value.config.materialized in materializations
         and value.config.enabled     
         and not key.endswith("_create_gold")
-        {{ log("Running key: " ~ key, true) }}
         -%}
         {%- set name = value.schema + "." + value.alias -%}
+        {{ log("Running key: " ~ key, true) }}
+        {{ log("Running name: " ~ name, true) }}
         {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value,  exclude_source=true)[:-1] ~ "]") -%}
             {% if _result -%}
                 {%- do _result.insert(0, key) -%}
