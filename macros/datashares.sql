@@ -111,7 +111,7 @@
         and set(value.fqn).intersection(node_paths)
         and value.config.materialized in materializations
         and value.config.enabled
-        and not value.sources
+        {# and not value.sources #}
         and not key.endswith("_create_gold")
         -%}
         {%- set name = value.schema + "." + value.alias -%}
