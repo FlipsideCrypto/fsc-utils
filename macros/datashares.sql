@@ -47,7 +47,7 @@
     {% set re = modules.re %}
     {% set outer = namespace(replaced=ddl) %}
     {% for key in references_to_replace %}
-        {%- set original = re.compile(r"\b" ~ target.database ~ "." ~ key ~ r"\b", re.IGNORECASE) -%}
+        {%- set original = re.compile("\\b" ~ target.database ~ "." ~ key ~ "\\b", re.IGNORECASE) -%}
         {%- set replacement  =  new_database ~ "." ~ key -%}
         {% set outer.replaced = original.sub(replacement, outer.replaced) %}
         {# {%- set outer.replaced = outer.replaced|replace(original, replacement) -%} #}
