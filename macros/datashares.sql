@@ -44,6 +44,25 @@
     ddl: the DDL statement to replace the references in
     new_database: the new database to replace the references with
 #}
+    {% set re = modules.re %}
+    {% set outer = namespace(replaced=ddl) %}
+    {% for key in references_to_replace %}
+        {%- set original = re.compile(r"\b" ~ target.database ~ "." ~ key ~ r"\b", re.IGNORECASE) -%}
+        {%- set replacement  =  new_database ~ "." ~ key -%}
+        {% set outer.replaced = original.sub(replacement, outer.replaced) %}
+        {# {%- set outer.replaced = outer.replaced|replace(original, replacement) -%} #}
+    {%- endfor -%}
+    {% set outer.replaced = outer.replaced|replace(target.database.upper() ~ ".", "__SOURCE__.") %}
+    {{- outer.replaced -}}
+{%- endmacro -%}
+{# {% macro replace_database_references(references_to_replace, ddl, new_database) %}
+{#
+    Return the DDL statement for a view with the references replaced.
+
+    references_to_replace: a dictionary of references to replace
+    ddl: the DDL statement to replace the references in
+    new_database: the new database to replace the references with
+#}
     {% set outer = namespace(replaced=ddl) %}
     {% for key in references_to_replace %}
         {%- set original = target.database ~ "." ~ key.upper() -%}
@@ -56,7 +75,7 @@
     {% set outer.replaced = outer.replaced|replace(target.database.upper() ~ ".", "__SOURCE__.") %}
     {% set outer.replaced = outer.replaced|replace(target.database.lower() ~ ".", "__SOURCE__.") %}
     {{- outer.replaced -}}
-{%- endmacro -%}
+{%- endmacro -%} #}
 
 {% macro generate_view_ddl(dag, schema) %}
 {#
