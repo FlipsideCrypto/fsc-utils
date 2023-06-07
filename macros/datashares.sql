@@ -36,6 +36,7 @@
         {%- endfor -%}
         {{- tojson(ddl) -}}
     {%- endif -%}
+     {{ log("Running ddl: " ~ ddl, true) }}
 {%- endmacro -%}
 
 {% macro replace_database_references(references_to_replace, ddl, new_database) %}
@@ -59,9 +60,9 @@
     {% set outer.replaced = outer.replaced|replace(target.database.lower() ~ ".", "__SOURCE__.") %}
     {{- outer.replaced -}}
 
-    {{ log("Running references_to_replace: " ~ references_to_replace, true) }}
-    {{ log("Running ddl: " ~ ddl, true) }}
-    {{ log("Running new_database: " ~ new_database, true) }}
+    {{ log("Running outer.replaced: " ~ outer.replaced, true) }}
+    {# {{ log("Running ddl: " ~ ddl, true) }}
+    {{ log("Running new_database: " ~ new_database, true) }} #}
 {%- endmacro -%}
 
 {% macro generate_view_ddl(dag, schema) %}
@@ -75,7 +76,7 @@
     {%- set created = {} -%}
     {%- set final_text = [] -%}
     {%- for view, deps in dag.items() -%}
-     {{ log("Running dag: " ~ dag, true) }}
+     {# {{ log("Running dag: " ~ dag, true) }} #}
         {%- for d in deps -%}
         
             {%- set table_name = d.split(".")[-1].replace("__", ".").upper() -%}
@@ -130,8 +131,8 @@
         {%- endif -%}
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
-        {{ log("Running dag: " ~ dag, true) }}
-        {{ log("Running schema: " ~ schema, true) }}
+        {# {{ log("Running dag: " ~ dag, true) }}
+        {{ log("Running schema: " ~ schema, true) }} #}
     {{- tojson(final) -}}
 {%- endmacro -%}
 
@@ -146,11 +147,11 @@
     {%- set view_ddl = [] -%}
     {% for s in schema %}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
-          {{ log("Running schema_ddl: " ~ schema_ddl, true) }}
+          {# {{ log("Running schema_ddl: " ~ schema_ddl, true) }} #}
     {%- endfor -%}
     {% for table in tables %}
         {%- do view_ddl.append("CREATE OR REPLACE VIEW __NEW__." ~ table ~ " AS SELECT * FROM " ~ "__SOURCE__." ~ table ~";") -%}
-        {{ log("Running view_ddl: " ~ view_ddl, true) }}
+        {# {{ log("Running view_ddl: " ~ view_ddl, true) }} #}
     {%- endfor -%}
     {{- toyaml(schema_ddl + view_ddl) -}}
 {%- endmacro -%}
@@ -168,11 +169,11 @@
     {%- set combined_ddl = gold_views_ddl + gold_tables_ddl -%}
     {%- do combined_ddl.insert(0, "CREATE DATABASE IF NOT EXISTS __NEW__;") -%}
     {{- "BEGIN\n" ~ (combined_ddl | join("\n")) ~ "\nEND" -}}
-     {{ log("Running gold_views: " ~ gold_views, true) }}
+     {# {{ log("Running gold_views: " ~ gold_views, true) }}
      {{ log("Running gold_views_ddl: " ~ gold_views_ddl), true }}
      {{ log("Running gold_tables: " ~ gold_tables, true) }}
      {{ log("Running gold_tables_ddl: " ~ gold_tables_ddl, true) }}
-     {{ log("Running combined_ddl: " ~ combined_ddl, true) }}
+     {{ log("Running combined_ddl: " ~ combined_ddl, true) }} #}
 
 
 {%- endmacro -%}
