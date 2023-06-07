@@ -113,7 +113,7 @@
         and value.config.materialized in materializations
         and value.config.enabled     
         and not key.endswith("_create_gold")
-         and not key.contains("STREAMLINE")
+        and not key.startswith("STREAMLINE")
         -%}
         {%- set name = value.schema + "." + value.alias -%}
         {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value,  exclude_source=true)[:-1] ~ "]") -%}
