@@ -112,7 +112,9 @@
         and set(value.fqn).intersection(node_paths)
         and value.config.materialized in materializations
         and value.config.enabled     
+        and not value.sources
         and not key.endswith("_create_gold")
+        
         -%}
         {%- set name = value.schema + "." + value.alias -%}
         {{ log("Running key: " ~ key, true) }}
@@ -136,7 +138,7 @@
         {%- endif -%}
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
-        {{ log("Running node_paths: " ~ node_paths, true) }}
+        {# {{ log("Running node_paths: " ~ node_paths, true) }} #}
         {# {{ log("Running final: " ~ final, true) }} #}
     {{- tojson(final) -}}
 {%- endmacro -%}
