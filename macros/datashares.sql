@@ -118,6 +118,7 @@
         {{ log("Running key: " ~ key, true) }}
         {{ log("Running name: " ~ name, true) }}
         {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value,  exclude_source=true)[:-1] ~ "]") -%}
+        {{ log("Running _result: " ~ _result, true) }}
             {% if _result -%}
                 {%- do _result.insert(0, key) -%}
                 {%- do dag.update({name.upper() : _result | reverse|list})  -%}
