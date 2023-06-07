@@ -51,7 +51,8 @@
         {%- set replacement  =  new_database ~ "." ~ key -%}
         {% set outer.replaced = original.sub(replacement, outer.replaced) %}
     {%- endfor -%}
-    {% set outer.replaced = outer.replaced|replace(target.database.upper() ~ ".", "__SOURCE__.") %}
+    {%- set original = re.compile("\\b" ~ target.database ~ "." ~ "\\b", re.IGNORECASE) -%}
+    {% set outer.replaced = original.sub("__SOURCE__.", outer.replaced) %}
     {{- outer.replaced -}}
 {%- endmacro -%}
 
