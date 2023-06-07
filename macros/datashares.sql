@@ -36,7 +36,7 @@
         {%- endfor -%}
         {{- tojson(ddl) -}}
     {%- endif -%}
-     {{ log("Running ddl: " ~ ddl, true) }}
+     {# {{ log("Running ddl: " ~ ddl, true) }} #}
 {%- endmacro -%}
 
 {% macro replace_database_references(references_to_replace, ddl, new_database) %}
