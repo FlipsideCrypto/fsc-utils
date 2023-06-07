@@ -111,9 +111,9 @@
         if value.refs
         and set(value.fqn).intersection(node_paths)
         and value.config.materialized in materializations
-        and value.config.enabled   
-        and not value.sources  
+        and value.config.enabled     
         and not key.endswith("_create_gold")
+         and not key.contains("STREAMLINE")
         -%}
         {%- set name = value.schema + "." + value.alias -%}
         {%- set _result = fromyaml("[" ~ fsc_utils.get_ancestors(value,  exclude_source=true)[:-1] ~ "]") -%}
@@ -135,7 +135,7 @@
     {%- endfor -%}
     {%- set final = {"dag": dag, "schema": schema} -%}
         {{ log("Running node_paths: " ~ node_paths, true) }}
-        {{ log("Running final: " ~ final, true) }}
+        {# {{ log("Running final: " ~ final, true) }} #}
     {{- tojson(final) -}}
 {%- endmacro -%}
 
