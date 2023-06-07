@@ -93,7 +93,7 @@
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
     {%- endfor -%}
     {{- toyaml(schema_ddl + final_text) -}}
-      {{ log("Running toyaml: " ~ toyaml, true) }}
+      {{ log("Running schema_ddl: " ~ schema_ddl, true) }}
 {%- endmacro -%}
 
 {% macro generate_dag_and_schemas(node_paths, materializations) %}
@@ -166,9 +166,11 @@
  #}
     {%- set gold_views = fromjson(fsc_utils.generate_dag_and_schemas(["gold"], ["view"])) -%}
     {%- set gold_views_ddl = fromyaml(fsc_utils.generate_view_ddl(gold_views["dag"], gold_views["schema"])) -%}
+    {%- set silver_views = fromjson(fsc_utils.generate_dag_and_schemas(["silver"], ["view"])) -%}
+    {%- set silver_views_ddl = fromyaml(fsc_utils.generate_view_ddl(silver_views["dag"], silver_views["schema"])) -%}
     {%- set gold_tables = fromjson(fsc_utils.generate_dag_and_schemas(["gold"], ["incremental", "table"])) -%}
     {%- set gold_tables_ddl = fromyaml(fsc_utils.generate_table_views_ddl(gold_tables["dag"].keys(), gold_tables["schema"])) -%}
-    {%- set combined_ddl = gold_views_ddl + gold_tables_ddl -%}
+    {%- set combined_ddl = silver_views_ddl + gold_views_ddl + gold_tables_ddl -%}
     {%- do combined_ddl.insert(0, "CREATE DATABASE IF NOT EXISTS __NEW__;") -%}
     {{- "BEGIN\n" ~ (combined_ddl | join("\n")) ~ "\nEND" -}}
      {# {{ log("Running gold_views: " ~ gold_views, true) }}
