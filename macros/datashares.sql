@@ -87,7 +87,7 @@
             {%- endif -%}
         {%- endfor -%}
     {%- endfor -%}
-    {{ log("Running replaced: " ~ replaced, true) }}
+    {{ log("Running final_text: " ~ final_text, true) }}
     {%- set schema_ddl = [] -%}
     {%- for s in schema -%}
         {%- do schema_ddl.append("CREATE SCHEMA IF NOT EXISTS __NEW__." ~ s ~ ";") -%}
