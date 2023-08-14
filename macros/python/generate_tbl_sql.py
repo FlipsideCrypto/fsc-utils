@@ -230,6 +230,7 @@ def main(config_file, target, drop_all=False):
                 continue
             event_name, keys_types = get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0)
             if not keys_types:
+                print(f"Skipped {schema}__{protocol}{'_' + version if version else ''} on {database}, no key types found...submit ABI and try again")
                 continue
             if drop_all:
                 item_drop = True
