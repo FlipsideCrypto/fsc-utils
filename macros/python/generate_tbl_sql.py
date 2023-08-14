@@ -72,12 +72,12 @@ def generate_addr_clause(contract_addresses):
             return f"AND contract_address IN ({formatted_addresses})"
     return ""
 
-def get_key_types(conn, database, schema, name, contract_addresses, topic_0):
+def get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0):
     """
     Execute a Snowflake SQL query to fetch the keys and their types.
     """
     if not topic_0 or len(topic_0) < 1:
-        print(f"Skipped {schema}__{name}, missing or incorrect event...")
+        print(f"Skipped {schema}__{protocol}{'_' + version if version else ''}, missing or incorrect event...")
         return {}
 
     contract_address_clause = generate_addr_clause(contract_addresses)
@@ -87,6 +87,7 @@ def get_key_types(conn, database, schema, name, contract_addresses, topic_0):
         SELECT 
             contract_address,
             topics[0] AS topic_0,
+            event_name,
             decoded_flat
         FROM 
             {database}.silver.decoded_logs
@@ -97,9 +98,11 @@ def get_key_types(conn, database, schema, name, contract_addresses, topic_0):
     )
 
     SELECT
+        event_name,
         OBJECT_AGG(DISTINCT key, data_type::VARIANT) AS key_types
     FROM (
         SELECT
+            event_name,
             key,
             CASE
                 WHEN VALUE::STRING IN ('true', 'false') THEN 'BOOLEAN'
@@ -110,21 +113,23 @@ def get_key_types(conn, database, schema, name, contract_addresses, topic_0):
         FROM base_data,
         LATERAL FLATTEN(input => base_data.decoded_flat)
     )
+    GROUP BY 1
     """
     
     cursor = conn.cursor()
     cursor.execute(key_types_query)
     row = cursor.fetchone()
-    if not row or not row[0]:
-        print(f"No key types found for {name} on {database}")
-        return {}
-    key_types_str = row[0]
+    if not row or not row[0] or not row[1]:
+        print(f"No key types found for {protocol}{'_' + version if version else ''} on {database}")
+        return None, {}
+    event_name = row[0].lower()
+    key_types_str = row[1]
     key_types_dict = json.loads(key_types_str)
     cursor.close()
     
-    return key_types_dict
+    return event_name, key_types_dict
 
-def generate_sql(name, contract_addresses, topic_0, keys_types):
+def generate_sql(protocol, contract_addresses, topic_0, keys_types):
     """
     Generate the desired DBT model based on the contract_address, topic_0, and keys_types. 
     This does not execute a Snowflake SQL query, it simply creates the DBT model.
@@ -154,7 +159,7 @@ def generate_sql(name, contract_addresses, topic_0, keys_types):
         origin_from_address,
         origin_to_address,
         contract_address,
-        '{name}' AS name,
+        '{protocol}' AS name,
         event_index,
         topics[0] :: STRING AS topic_0,
         event_name,      
@@ -186,7 +191,7 @@ def main(config_file, target, drop_all=False):
 
     Parameters:
     - config_file (str, required): Path to the JSON configuration file which contains details like blockchain, schema, 
-                         name, contract address, topic, and whether to drop the existing SQL file.
+                         protocol, contract address, topic, and whether to drop the existing SQL file.
     
     - target (str, optional): Target environment, used for determining the DBT profile and database connection details. Default = dev.
     
@@ -210,7 +215,8 @@ def main(config_file, target, drop_all=False):
             else:
                 blockchains = [blockchain.lower() for blockchain in blockchains]
             schema = item.get('schema','').lower()
-            name = item.get('name','').lower()
+            protocol = item.get('protocol','').lower()
+            version = item.get('version','').lower()
             contract_addresses = item.get('contract_address', [])
             if not isinstance(contract_addresses, list):
                 contract_addresses = [contract_addresses.lower()]
@@ -219,26 +225,24 @@ def main(config_file, target, drop_all=False):
             if not isinstance(contract_addresses, list):
                 contract_addresses = [contract_addresses.lower()]
             topic_0 = item.get('topic_0','').lower()
+            if database.lower() not in blockchains and database.split('_')[0].lower() not in blockchains:
+                print(f"Skipped {schema}__{protocol}{'_' + version if version else ''} on {blockchains}, {database} not in blockchains list...")
+                continue
+            event_name, keys_types = get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0)
+            if not keys_types:
+                continue
             if drop_all:
                 item_drop = True
             else:
                 item_drop = item.get('drop', False)
 
-            if database.lower() not in blockchains and database.split('_')[0].lower() not in blockchains:
-                print(f"Skipped {schema}__{name}, {database} not in blockchains list...")
-                continue
+            sql_query = generate_sql(protocol, contract_addresses, topic_0, keys_types)
 
-            keys_types = get_key_types(conn, database, schema, name, contract_addresses, topic_0)
-            if not keys_types:
-                continue
-
-            sql_query = generate_sql(name, contract_addresses, topic_0, keys_types)
-
-            dynamic_output_dir = f"models/{schema.split('_')[0].lower()}/{schema.split('_')[1].lower()}/{name.split('_')[0].lower()}"
+            dynamic_output_dir = f"models/{schema.split('_')[0].lower()}/{schema.split('_')[1].lower()}/{protocol.split('_')[0].lower()}"
 
             os.makedirs(dynamic_output_dir, exist_ok=True)
 
-            filename = f"{schema}__{name}.sql"
+            filename = f"{schema}__{protocol}{'_'+version if version else ''}_{event_name}.sql"
             
             sql_exists = file_exists_in_repo(filename)
 
