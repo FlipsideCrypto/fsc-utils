@@ -1,0 +1,20 @@
+[
+  {
+    "blockchain": ["blockchain1", "blockchain2", "blockchain3"],
+    "schema": "insert_schema_name",
+    "protocol": "insert_protocol_name",
+    "version": "insert_version_name",
+    "contract_address": ["contract_address1", "contract_address2"],
+    "topic_0": "insert_event_topic_0",
+    "drop": false
+  },
+  {
+    "blockchain": "blockchain1",
+    "schema": "insert_schema_name",
+    "protocol": "insert_protocol_name",
+    "version": "insert_version_name",
+    "contract_address": "contract_address1",
+    "topic_0": "insert_event_topic_0",
+    "drop": false
+  }
+]
