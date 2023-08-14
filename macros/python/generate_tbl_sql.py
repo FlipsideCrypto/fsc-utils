@@ -120,7 +120,7 @@ def get_key_types(conn, database, schema, protocol, version, contract_addresses,
     cursor.execute(key_types_query)
     row = cursor.fetchone()
     if not row or not row[0] or not row[1]:
-        print(f"No key types found for {protocol}{'_' + version if version else ''} on {database}")
+        print(f"No key types found for {protocol}{'_' + version if version else ''} on {database}...submit ABI and try again.")
         return None, {}
     event_name = row[0].lower()
     key_types_str = row[1]
@@ -230,7 +230,6 @@ def main(config_file, target, drop_all=False):
                 continue
             event_name, keys_types = get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0)
             if not keys_types:
-                print(f"Skipped {schema}__{protocol}{'_' + version if version else ''} on {database}, no key types found...submit ABI and try again")
                 continue
             if drop_all:
                 item_drop = True
