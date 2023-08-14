@@ -67,9 +67,12 @@ def file_exists_in_repo(filename):
 
 def generate_addr_clause(contract_addresses):
     if contract_addresses:
-        formatted_addresses = ', '.join([f"'{address}'" for address in contract_addresses if address.startswith('0x')])
-        if formatted_addresses:
-            return f"AND contract_address IN ({formatted_addresses})"
+        if len(contract_addresses) == 1 and contract_addresses[0].startswith('0x'):
+            return f"AND contract_address = '{contract_addresses[0]}'"
+        else:
+            formatted_addresses = ', '.join([f"'{address}'" for address in contract_addresses if address.startswith('0x')])
+            if formatted_addresses:
+                return f"AND contract_address IN ({formatted_addresses})"
     return ""
 
 def get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0):
