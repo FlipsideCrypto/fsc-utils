@@ -190,7 +190,8 @@ def generate_sql(protocol, contract_addresses, topic_0, keys_types):
 
 def main(config_file, target, drop_all=False):
     """
-    Generates SQL/YML files based on a configuration file and stores them in the specified directory.
+    Generates SQL/YML files based on a configuration file and stores them in the specified directory. 
+    Note: this script calls the YML generation script by default.
 
     Parameters:
     - config_file (str, required): Path to the JSON configuration file which contains details like blockchain, schema, 
