@@ -77,10 +77,11 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                         unique_keys = []
                         if config_match:
                             config_content = config_match.group(1)
-                            unique_key_matches = re.findall(r"unique_key\s*=\s*\[?(.*?)\]?", config_content)
+                            unique_key_match = re.search(r"unique_key\s*=\s*(\[[^\]]+\]|'[^']+'|\"[^\"]+\")", config_content)
                             
-                            for match in unique_key_matches:
-                                keys = [key.strip(" '") for key in match.split(',')]
+                            if unique_key_match:
+                                keys_str = unique_key_match.group(1).strip("[]")
+                                keys = [key.strip(" '\"") for key in keys_str.split(',')]
                                 unique_keys.extend(keys)
                         if unique_keys:
                             unique_key_test = "- dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n"
