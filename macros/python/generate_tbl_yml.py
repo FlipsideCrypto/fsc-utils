@@ -63,10 +63,11 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                     columns = []
                     with open(sql_filepath, 'r') as f:
                         sql_content = f.read()
-                        reversed_sql = sql_content[::-1]
-                        match = re.search(r"MORF\s+(.*?)\s+TCELES", reversed_sql, re.DOTALL | re.IGNORECASE) #reverse the string to match the last SELECT statement
-                        if match:
-                            select_content = match.group(1)[::-1]
+                        # Remove the content between {% if is_incremental() %} and {% endif %}
+                        sql_content = re.sub(r"{% if is_incremental\(\) %}.*?{% endif %}", "", sql_content, flags=re.DOTALL | re.IGNORECASE)
+                        matches = re.findall(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL | re.IGNORECASE)
+                        if matches:
+                            select_content = matches[-1]
                             columns = [col.strip() for col in select_content.split(",")]
                             columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{") and col not in skip_column_mapping]
 
