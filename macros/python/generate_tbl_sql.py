@@ -75,41 +75,6 @@ def generate_addr_clause(contract_addresses):
                 return f"AND contract_address IN ({formatted_addresses})"
     return ""
 
-def json_to_snowflake(conn, config_file):
-    """
-    Insert the JSON data into a Snowflake table.
-    """
-    database = "crosschain"
-    schema = "bronze"
-    tbl_str = f"{database}.{schema}.json_config_tbl"
-
-    cursor = conn.cursor()
-
-    for item in config_file:
-        blockchain = str(item.get('blockchain', []))
-        schema = item.get('schema', '')
-        protocol = item.get('protocol', '')
-        version = item.get('version', '')
-        contract_address = str(item.get('contract_address', []))
-        topic_0 = item.get('topic_0', '')
-        drop = item.get('drop', False)
-
-        insert_query = f"""
-        CREATE TABLE IF NOT EXISTS {tbl_str} (
-        blockchain ARRAY<VARIANT>,
-        schema STRING,
-        protocol STRING,
-        version STRING,
-        contract_address ARRAY<VARIANT>,
-        topic_0 STRING,
-        drop BOOLEAN
-        )
-        INSERT INTO {tbl_str} (blockchain, schema, protocol, version, contract_address, topic_0, drop)
-        VALUES ({blockchain}, '{schema}', '{protocol}', '{version}', {contract_address}, '{topic_0}', {drop});
-        """
-        cursor.execute(insert_query)
-    cursor.close()
-
 def get_key_types(conn, database, schema, protocol, version, contract_addresses, topic_0):
     """
     Execute a Snowflake SQL query to fetch the keys and their types.
@@ -244,8 +209,6 @@ def main(config_file, target, drop_all=False):
 
     with open(config_file, 'r') as file:
         config = json.load(file)
-
-    json_to_snowflake(conn, config)
 
     for item in config:
         try:
