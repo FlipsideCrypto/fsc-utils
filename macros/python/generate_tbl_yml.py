@@ -73,8 +73,13 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                             for col in potential_columns:
                                 if " AS " in col:
                                     columns.append(col.split(" AS ")[-1].strip().upper())
+                                elif "::" in col:
+                                    col_part = col.split("::")[0].strip().upper()
+                                    col_part = re.sub(r'[^A-Z0-9_]', '', col_part)
+                                    columns.append(col_part)
                                 else:
-                                    columns.append(col.split("::")[0].strip().upper())
+                                    col_part = re.sub(r'[^A-Z0-9_]', '', col)
+                                    columns.append(col_part)
                             columns = [col for col in columns if col not in skip_column_mapping and not col.startswith("{")]
 
                     yml_content = "version: 2\nmodels:\n  - name: {}\n    tests:\n      - dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n            - _LOG_ID\n    columns:\n".format(os.path.basename(sql_filepath).replace('.sql', ''))
