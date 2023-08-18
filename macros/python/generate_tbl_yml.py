@@ -42,7 +42,8 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
         tuple(["timestamp", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
     }
-    skip_column_mapping = [item.upper() for item in ["event_removed", "_log_id", "_call_id", "_id"]]
+    skip_column_mapping = [item.upper() for item in ["event_removed"]]
+    recency_columns = [item.upper() for item in ["_inserted_timestamp"]]
     column_test_mapping = {
         "STRING": "dbt_expectations.expect_column_values_to_match_regex:\n              regex: 0[xX][0-9a-fA-F]+\n",
         "INTEGER": "dbt_expectations.expect_column_values_to_be_in_type_list:\n              column_type_list:\n                - DECIMAL\n                - FLOAT\n                - NUMBER\n",
@@ -83,7 +84,9 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                                 break
 
                         yml_content += "      - name: {}\n        tests:\n          - not_null\n".format(column)
-                        if column_type in column_test_mapping:
+                        if column in recency_columns:
+                            yml_content += "          - dbt_expectations.expect_row_values_to_have_recent_data:\n              datepart: day\n              interval: 3\n"
+                        elif column_type in column_test_mapping:
                             yml_content += "          - " + column_test_mapping[column_type]
 
                     yml_filename = sql_file.replace('.sql', '.yml')
