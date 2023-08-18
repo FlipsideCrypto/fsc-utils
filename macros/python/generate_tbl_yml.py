@@ -65,9 +65,9 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                         sql_content = f.read()
                         # Remove the content between {% if is_incremental() %} and {% endif %}
                         sql_content = re.sub(r"{% if is_incremental\(\) %}.*?{% endif %}", "", sql_content, flags=re.DOTALL | re.IGNORECASE)
-                        match = re.search(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL)
-                        if match:
-                            select_content = match.group(1)
+                        matches = re.findall(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL)
+                        if matches:
+                            select_content = matches[-1]
                             columns = [col.strip() for col in select_content.split(",")]
                             columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{") and col not in skip_column_mapping]
 
