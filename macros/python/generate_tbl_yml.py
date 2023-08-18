@@ -83,11 +83,13 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                                 column_type = value
                                 break
 
-                        yml_content += "      - name: {}\n        tests:\n          - not_null\n".format(column)
+                        yml_content += "      - name: {}\n        tests:\n".format(column)
                         if column in recency_columns:
                             yml_content += "          - dbt_expectations.expect_row_values_to_have_recent_data:\n              datepart: day\n              interval: 3\n"
-                        elif column_type in column_test_mapping:
-                            yml_content += "          - " + column_test_mapping[column_type]
+                        else:
+                            yml_content += "          - not_null\n"
+                            if column_type in column_test_mapping:
+                                yml_content += "          - " + column_test_mapping[column_type]
 
                     yml_filename = sql_file.replace('.sql', '.yml')
 
