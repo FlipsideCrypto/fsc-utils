@@ -63,24 +63,11 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                     columns = []
                     with open(sql_filepath, 'r') as f:
                         sql_content = f.read()
-                        # Remove the content between {% if is_incremental() %} and {% endif %}
-                        sql_content = re.sub(r"{% if is_incremental\(\) %}.*?{% endif %}", "", sql_content, flags=re.DOTALL | re.IGNORECASE)
-                        matches = re.findall(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL | re.IGNORECASE)
-                        if matches:
-                            select_content = matches[-1]
-                            potential_columns = [col.strip() for col in select_content.split(",")]
-                            columns = []
-                            for col in potential_columns:
-                                if " AS " in col:
-                                    columns.append(col.split(" AS ")[-1].strip().upper())
-                                elif "::" in col:
-                                    col_part = col.split("::")[0].strip().upper()
-                                    col_part = re.sub(r'[^A-Z0-9_]', '', col_part)
-                                    columns.append(col_part)
-                                else:
-                                    col_part = re.sub(r'[^A-Z0-9_]', '', col)
-                                    columns.append(col_part)
-                            columns = [col for col in columns if col not in skip_column_mapping and not col.startswith("{")]
+                        match = re.search(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL)
+                        if match:
+                            select_content = match.group(1)
+                            columns = [col.strip() for col in select_content.split(",")]
+                            columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{") and col not in skip_column_mapping]
 
                     yml_content = "version: 2\nmodels:\n  - name: {}\n    tests:\n      - dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n            - _LOG_ID\n    columns:\n".format(os.path.basename(sql_filepath).replace('.sql', ''))
                     for column in columns:
