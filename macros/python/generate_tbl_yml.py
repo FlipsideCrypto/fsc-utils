@@ -64,7 +64,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                     columns = []
                     with open(sql_filepath, 'r') as f:
                         sql_content = f.read()
-                        # Remove the content between {% if is_incremental() %} and {% endif %}
+
                         sql_content = re.sub(r"{% if is_incremental\(\) %}.*?{% endif %}", "", sql_content, flags=re.DOTALL | re.IGNORECASE)
                         matches = re.findall(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL)
                         if matches:
@@ -73,7 +73,22 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                             columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{")]
                             columns = [col for col in columns if col not in skip_column_mapping]
 
-                    yml_content = "version: 2\nmodels:\n  - name: {}\n    tests:\n      - dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n            - _LOG_ID\n    columns:\n".format(os.path.basename(sql_filepath).replace('.sql', ''))
+                        config_match = re.search(r"{{\s*config\((.*?)\)\s*}}", sql_content, re.DOTALL)
+                        unique_keys = []
+                        if config_match:
+                            config_content = config_match.group(1)
+                            unique_key_matches = re.findall(r"unique_key\s*=\s*\[?(.*?)\]?", config_content)
+                            
+                            for match in unique_key_matches:
+                                keys = [key.strip(" '") for key in match.split(',')]
+                                unique_keys.extend(keys)
+                        if unique_keys:
+                            unique_key_test = "- dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n"
+                            for key in unique_keys:
+                                unique_key_test += f"            - {key.upper()}\n"
+                            yml_content = f"version: 2\nmodels:\n  - name: {os.path.basename(sql_filepath).replace('.sql', '')}\n    tests:\n      {unique_key_test}    columns:\n"
+                        else:
+                            yml_content = f"version: 2\nmodels:\n  - name: {os.path.basename(sql_filepath).replace('.sql', '')}\n    columns:\n"
                     for column in columns:
                         column_type = 'STRING'
                         column_lower = column.lower()
