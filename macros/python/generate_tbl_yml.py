@@ -63,6 +63,8 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                     columns = []
                     with open(sql_filepath, 'r') as f:
                         sql_content = f.read()
+                        # Remove the content between {% if is_incremental() %} and {% endif %}
+                        sql_content = re.sub(r"{% if is_incremental\(\) %}.*?{% endif %}", "", sql_content, flags=re.DOTALL | re.IGNORECASE)
                         match = re.search(r"SELECT\s+(.*?)\s+FROM", sql_content, re.DOTALL)
                         if match:
                             select_content = match.group(1)
