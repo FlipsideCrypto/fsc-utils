@@ -42,7 +42,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
         tuple(["timestamp", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
     }
-    skip_column_mapping = [item.upper() for item in ["event_removed"]]
+    skip_column_mapping = [item.upper() for item in ["event_removed","_log_id","_call_id","_id"]]
     recency_columns = [item.upper() for item in ["_inserted_timestamp"]]
     column_test_mapping = {
         "STRING": "dbt_expectations.expect_column_values_to_match_regex:\n              regex: 0[xX][0-9a-fA-F]+\n",
