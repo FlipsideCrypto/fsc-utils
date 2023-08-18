@@ -42,7 +42,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
         tuple(["timestamp", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
     }
-    skip_column_mapping = ["event_removed","_log_id","_call_id","_id"]
+    skip_column_mapping = [item.upper() for item in ["event_removed", "_log_id", "_call_id", "_id"]]
     column_test_mapping = {
         "STRING": "dbt_expectations.expect_column_values_to_match_regex:\n              regex: 0[xX][0-9a-fA-F]+\n",
         "INTEGER": "dbt_expectations.expect_column_values_to_be_in_type_list:\n              column_type_list:\n                - DECIMAL\n                - FLOAT\n                - NUMBER\n",
@@ -69,7 +69,8 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
                         if matches:
                             select_content = matches[-1]
                             columns = [col.strip() for col in select_content.split(",")]
-                            columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{") and col not in skip_column_mapping]
+                            columns = [re.split("::| AS ", col)[-1].strip().upper() for col in columns if not col.startswith("{")]
+                            columns = [col for col in columns if col not in skip_column_mapping]
 
                     yml_content = "version: 2\nmodels:\n  - name: {}\n    tests:\n      - dbt_utils.unique_combination_of_columns:\n          combination_of_columns:\n            - _LOG_ID\n    columns:\n".format(os.path.basename(sql_filepath).replace('.sql', ''))
                     for column in columns:
