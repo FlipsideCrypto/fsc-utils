@@ -36,7 +36,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
     None. This function writes .yml files to the specified or default output directory.
     """
     column_type_mapping = {
-        tuple(["number", "index", ":: INTEGER"]): "INTEGER",
+        tuple(["number", "index", "amount", "fee", ":: INTEGER"]): "INTEGER",
         tuple(["hash", "signature", "address", "name", "_id", ":: STRING"]): "STRING",
         tuple(["bool", ":: BOOLEAN"]): "BOOLEAN",
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
