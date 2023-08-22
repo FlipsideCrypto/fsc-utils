@@ -40,7 +40,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
         tuple(["hash", "signature", "address", "name", "_id", ":: STRING"]): "STRING",
         tuple(["bool", ":: BOOLEAN"]): "BOOLEAN",
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
-        tuple(["timestamp", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
+        tuple(["timestamp", "date", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
     }
     skip_column_mapping = [item.upper() for item in ["event_removed","_log_id","_call_id","_id"]]
     recency_columns = [item.upper() for item in ["_inserted_timestamp"]]

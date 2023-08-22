@@ -107,12 +107,7 @@ def get_key_types(conn, database, schema, protocol, version, contract_addresses,
         SELECT
             event_name,
             key,
-            CASE
-                WHEN VALUE::STRING IN ('true', 'false') THEN 'BOOLEAN'
-                WHEN IS_DATE(VALUE) THEN 'DATE'
-                WHEN TRY_CAST(VALUE::STRING AS INTEGER) IS NOT NULL THEN 'INTEGER'
-                ELSE 'STRING'
-            END AS data_type
+            'STRING' AS data_type
         FROM base_data,
         LATERAL FLATTEN(input => base_data.decoded_flat)
     )
