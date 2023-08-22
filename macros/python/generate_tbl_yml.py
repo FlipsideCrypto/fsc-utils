@@ -37,7 +37,7 @@ def generate_yml(model_paths, output_dir=None, specific_files=[], drop_all=False
     """
     column_type_mapping = {
         tuple(["number", "index", "amount", "fee", ":: INTEGER"]): "INTEGER",
-        tuple(["hash", "signature", "address", "name", "_id", ":: STRING"]): "STRING",
+        tuple(["hash", "signature", "address", "name", "_id"]): "STRING",
         tuple(["bool", ":: BOOLEAN"]): "BOOLEAN",
         tuple(["flat", "data", ":: VARIANT"]): "VARIANT",
         tuple(["timestamp", "date", ":: TIMESTAMP", ":: DATE"]): "TIMESTAMP"
