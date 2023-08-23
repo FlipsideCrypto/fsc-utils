@@ -241,7 +241,11 @@ def main(config_file, target, drop_all=False):
             os.makedirs(dynamic_output_dir, exist_ok=True)
 
             filename = f"{schema}__{protocol}{'_'+version if version else ''}_{event_name}.sql"
-            
+
+            if not item.get('enabled', True):
+                print(f"Skipped {filename}, enabled = false...")
+                continue
+
             sql_exists = file_exists_in_repo(filename)
 
             if sql_exists:
