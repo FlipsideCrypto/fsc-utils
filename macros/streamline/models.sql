@@ -63,6 +63,11 @@ WHERE
 {% endmacro %}
 
 {% macro block_reorg(target, hours) %}
+
+{% set current_hour = run_query("SELECT EXTRACT(HOUR FROM SYSDATE())") %}
+
+{% if current_hour == '00' or current_hour == '08' or current_hour == '16' %}
+
 DELETE 
 FROM
     {{ target }}
@@ -87,5 +92,7 @@ WHERE
             )
             AND s.block_number = t.block_number
             AND s.tx_hash = t.tx_hash
-    );
+    )
+{% endif %}
+
 {% endmacro %}
