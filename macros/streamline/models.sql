@@ -64,7 +64,9 @@ WHERE
 
 {% macro block_reorg(target, hours) %}
 
-{% set current_hour = run_query("SELECT EXTRACT(HOUR FROM SYSDATE()) :: STRING") %}
+{% set current_hour %}
+    {{ run_query("SELECT EXTRACT(HOUR FROM SYSDATE()) :: STRING") }}
+{% endset %}
 
 {% if current_hour == '17' or current_hour == '11' %}
 
