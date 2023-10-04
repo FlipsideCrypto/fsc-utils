@@ -64,10 +64,9 @@ WHERE
 
 {% macro block_reorg(target, hours) %}
 
-{% set results = run_query("SELECT EXTRACT(HOUR FROM SYSDATE()) AS current_hour") %}
-{% set current_hour = results.columns[0].values()[0] | int %}
+{% set current_hour = run_query("SELECT EXTRACT(HOUR FROM SYSDATE())") %}
 
-{% if current_hour == 0 or current_hour == 8 or current_hour == 17 %}
+{% if current_hour == '0' or current_hour == '8' or current_hour == '17' %}
 
 DELETE 
 FROM
