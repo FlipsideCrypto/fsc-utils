@@ -68,11 +68,7 @@ WHERE
     {{ run_query("SELECT EXTRACT(HOUR FROM SYSDATE()) :: STRING") }}
 {% endset %}
 
-{% log "Current hour: " ~ current_hour %}
-
-{% if current_hour == '17' or current_hour == '11' %}
-
-{% log "Initiating DELETE process." %}
+{% if current_hour == '17' or current_hour == '11' or current_hour == 17 or current_hour == 11 %}
 
 DELETE 
 FROM
