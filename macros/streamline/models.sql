@@ -98,3 +98,21 @@ WHERE
 {% endif %}
 
 {% endmacro %}
+
+{% macro current_hour_test() %}
+
+{% set current_hour = run_query("SELECT EXTRACT(HOUR FROM SYSDATE())::INTEGER") %}
+
+SELECT {{ current_hour }} as debug_current_hour;
+
+{% endmacro %}
+
+
+{% macro current_hour_test2() %}
+
+{% set result = run_query("SELECT EXTRACT(HOUR FROM SYSDATE())::INTEGER as hour") %}
+{% set current_hour = result.columns[0].values()[0] %}
+
+SELECT {{ current_hour }} as debug_current_hour2;
+
+{% endmacro %}
