@@ -66,7 +66,7 @@ WHERE
 
 {% set current_hour = run_query("SELECT EXTRACT(HOUR FROM SYSDATE()) :: STRING") %}
 
-{% if current_hour == '17' or current_hour = '11' %}
+{% if current_hour == '17' or current_hour == '11' %}
 
 DELETE 
 FROM
