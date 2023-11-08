@@ -149,6 +149,7 @@ def generate_sql(protocol, contract_addresses, topic_0, keys_types):
     tags = {tags}
     ) }}}}
     
+    WITH base_evt AS (
     SELECT 
         block_number,
         block_timestamp,
@@ -179,6 +180,10 @@ def generate_sql(protocol, contract_addresses, topic_0, keys_types):
     FROM {{{{ this }}}}
     )
     {{% endif %}}
+    )
+
+    SELECT *
+    FROM base_evt
     """
     return base_evt_query
 
