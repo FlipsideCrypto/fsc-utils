@@ -176,7 +176,7 @@ def generate_sql(protocol, contract_addresses, topic_0, keys_types):
 
     {{% if is_incremental() %}}
     AND _inserted_timestamp >= (
-    SELECT MAX(_inserted_timestamp) :: DATE
+    SELECT MAX(_inserted_timestamp) - INTERVAL '12 hours'
     FROM {{{{ this }}}}
     )
     {{% endif %}}
