@@ -357,7 +357,7 @@ def main(file_url, index_cols):
 
 {% endmacro %}
 
-{% macro create_udtf_detect_overflowed_responses() %}
+{% macro create_udtf_flatten_overflowed_responses() %}
 
 import simplejson as json
 
