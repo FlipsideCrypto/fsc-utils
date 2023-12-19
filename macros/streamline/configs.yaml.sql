@@ -238,7 +238,7 @@
     PACKAGES = ('snowflake-snowpark-python', 'pandas', 'simplejson', 'numpy')
     HANDLER = 'FlattenRows'
   sql: |
-    {{ fsc_utils.create_udtf_detect_overflowed_responses() | indent(4) }}
+    {{ fsc_utils.create_udtf_flatten_overflowed_responses() | indent(4) }}
 
 {% endmacro %}
 
