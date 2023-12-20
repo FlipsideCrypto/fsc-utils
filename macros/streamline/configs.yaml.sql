@@ -206,8 +206,8 @@
 
 - name: {{ schema }}.udf_detect_overflowed_responses
   signature:
-    - [file_url, STRING, 'URL of the JSON file from BUILD_SCOPED_FILE_URL']
-    - [index_cols, STRING, 'Columns that compose the unique index to identify a row']
+    - [file_url, STRING]
+    - [index_cols, STRING]
   return_type: ARRAY
   options: |
     LANGUAGE PYTHON
@@ -221,8 +221,8 @@
 - name: {{ schema }}.udtf_flatten_overflowed_responses
   signature:
     - [file_url, STRING]
-    - [index_cols, ARRAY, 'Columns that compose the unique index to identify a row']
-    - [index_vals, ARRAY, 'Output of udf_detect_overflowed_responses()']
+    - [index_cols, ARRAY]
+    - [index_vals, ARRAY]
   return_type: |
     table(block_number NUMBER,
           metadata OBJECT,
