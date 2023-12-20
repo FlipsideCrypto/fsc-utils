@@ -474,14 +474,14 @@ class FlattenRows:
             df = pd.read_json(f, lines=True, compression='gzip')
 
         df.set_index(index_cols, inplace=True)
-        overflow = df.loc[index_vals]
-        overflow.reset_index(inplace=True)
+        df = df.loc[index_vals]
+        df.reset_index(inplace=True)
 
-        flat = Flatten(mode="both", exploded_key=[])
+        flattener = Flatten(mode="both", exploded_key=[])
 
         flattened = pd.concat(
-            overflow.apply(
-                lambda x: flat._flatten_response(
+            df.apply(
+                lambda x: flattener._flatten_response(
                     block_number=x["block_number"], metadata=x["metadata"], responses=x["data"], response_key=None
                 ),
                 axis="columns",
