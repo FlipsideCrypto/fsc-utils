@@ -207,7 +207,7 @@
 - name: {{ schema }}.udf_detect_overflowed_responses
   signature:
     - [file_url, STRING]
-    - [index_cols, STRING]
+    - [index_cols, ARRAY]
   return_type: ARRAY
   options: |
     LANGUAGE PYTHON
