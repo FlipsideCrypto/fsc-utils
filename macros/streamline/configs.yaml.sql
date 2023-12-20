@@ -204,5 +204,19 @@
   sql: |
     {{ fsc_utils.create_udf_hex_to_tezos() | indent(4) }}
 
+- name: {{ schema }}.udf_detect_overflowed_responses
+  signature:
+    - [file_url, STRING, 'URL of the JSON file from BUILD_SCOPED_FILE_URL']
+    - [index_cols, STRING, 'Columns that compose the unique index to identify a row']
+  return_type: ARRAY
+  options: |
+    LANGUAGE PYTHON
+    RUNTIME_VERSION = '3.8'
+    COMMENT = 'Detect overflowed responses larger than 16MB'
+    PACKAGES = ('snowflake-snowpark-python', 'pandas')
+    HANDLER = 'main'
+  sql: |
+    {{ fsc_utils.create_udf_detect_overflowed_responses() | indent(4) }}
+
 {% endmacro %}
 
