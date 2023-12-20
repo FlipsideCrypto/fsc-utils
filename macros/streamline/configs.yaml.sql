@@ -211,7 +211,7 @@
   return_type: ARRAY
   options: |
     LANGUAGE PYTHON
-    RUNTIME_VERSION = '3.11'
+    RUNTIME_VERSION = '3.8'
     COMMENT = 'Detect overflowed responses larger than 16MB'
     PACKAGES = ('snowflake-snowpark-python', 'pandas')
     HANDLER = 'main'
@@ -233,7 +233,7 @@
           value_ VARIANT)
   options: |
     LANGUAGE PYTHON
-    RUNTIME_VERSION = '3.11'
+    RUNTIME_VERSION = '3.8'
     COMMENT = 'Flatten rows from a JSON file with overflowed responses larger than 16MB'
     PACKAGES = ('snowflake-snowpark-python', 'pandas', 'simplejson', 'numpy')
     HANDLER = 'FlattenRows'
