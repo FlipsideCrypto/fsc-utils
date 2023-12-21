@@ -497,7 +497,6 @@ class FlattenRows:
         overflow = cleansed["value_"].astype(str).apply(len) > VARCHAR_MAX
 
         cleansed.loc[overflow, ["value_"]] = None
-        cleansed.loc[overflow, ["value_"]] = None
         cleansed["index_cols"] = pd.Series(cleansed.index.values, index=cleansed.index.values).apply(list)
         return list(cleansed.itertuples(index=False, name=None))
 {% endmacro %}

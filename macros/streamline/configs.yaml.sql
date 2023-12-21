@@ -224,14 +224,16 @@
     - [index_cols, ARRAY]
     - [index_vals, ARRAY]
   return_type: |
-    table(index_vals ARRAY,
+    table(
           block_number NUMBER,
           metadata OBJECT,
           seq NUMBER,
           key STRING,
           path STRING,
           index NUMBER,
-          value_ VARIANT)
+          value_ VARIANT,
+          index_vals ARRAY
+        )
   options: |
     LANGUAGE PYTHON
     RUNTIME_VERSION = '3.8'
