@@ -224,7 +224,8 @@
     - [index_cols, ARRAY]
     - [index_vals, ARRAY]
   return_type: |
-    table(block_number NUMBER,
+    table(index_vals ARRAY,
+          block_number NUMBER,
           metadata OBJECT,
           seq NUMBER,
           key STRING,

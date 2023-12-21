@@ -479,21 +479,24 @@ class FlattenRows:
 
         flattener = Flatten(mode="both", exploded_key=[])
 
-        flattened = pd.concat(
-            df.apply(
+        df["value_"] = df.apply(
                 lambda x: flattener._flatten_response(
                     block_number=x["block_number"], metadata=x["metadata"], responses=x["data"], response_key=None
                 ),
                 axis="columns",
             )
-            .apply(pd.DataFrame.from_records)
-            .values.tolist()
-        )
+        df["value_"] = df["value_"].apply(pd.DataFrame.from_records)
+        df["index_cols"] = df.index
+        df = df[["index_cols", "value_"]]
+        flattened: pd.DataFrame = pd.concat(
+            df["value_"].values.tolist(), keys=df["index_cols"].values.tolist()
+        ).droplevel(-1)
+
         cleansed = flattened.replace({np.nan: None})
 
         overflow = cleansed["value_"].astype(str).apply(len) > VARCHAR_MAX
 
         cleansed.loc[overflow, ["value_"]] = None
+        return list(cleansed.itertuples(index=True, name=None))
 
-        return list(cleansed.itertuples(index=False, name=None))
 {% endmacro %}
