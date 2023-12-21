@@ -497,6 +497,8 @@ class FlattenRows:
         overflow = cleansed["value_"].astype(str).apply(len) > VARCHAR_MAX
 
         cleansed.loc[overflow, ["value_"]] = None
-        return list(cleansed.itertuples(index=True, name=None))
+        cleansed.drop(columns=index_cols, inplace=True, errors='ignore')
+        cleansed.reset_index(inplace=True, allow_duplicates=False, names=index_cols)
+        return list(cleansed.itertuples(index=False, name=None))
 
 {% endmacro %}
