@@ -359,6 +359,7 @@ def main(file_url, index_cols):
 
 {% macro create_udtf_flatten_overflowed_responses() %}
 
+import logging
 import simplejson as json
 
 import numpy as np
@@ -366,6 +367,8 @@ import pandas as pd
 from snowflake.snowpark.files import SnowflakeFile
 
 VARCHAR_MAX = 16_777_216
+
+logger = logging.getLogger("udtf_flatten_overflowed_responses")
 
 class Flatten:
     """
@@ -473,9 +476,8 @@ class FlattenRows:
         with SnowflakeFile.open(file_url, 'rb') as f:
             df = pd.read_json(f, lines=True, compression='gzip')
 
-        df.set_index(index_cols, inplace=True)
+        df.set_index(index_cols, inplace=True, drop=False)
         df = df.loc[index_vals]
-        df.reset_index(inplace=True)
 
         flattener = Flatten(mode="both", exploded_key=[])
 
@@ -488,7 +490,7 @@ class FlattenRows:
         df["value_"] = df["value_"].apply(pd.DataFrame.from_records)
         df["index_cols"] = df.index
         df = df[["index_cols", "value_"]]
-        flattened: pd.DataFrame = pd.concat(
+        flattened = pd.concat(
             df["value_"].values.tolist(), keys=df["index_cols"].values.tolist()
         ).droplevel(-1)
 
@@ -497,6 +499,13 @@ class FlattenRows:
         overflow = cleansed["value_"].astype(str).apply(len) > VARCHAR_MAX
 
         cleansed.loc[overflow, ["value_"]] = None
-        cleansed["index_cols"] = pd.Series(cleansed.index.values, index=cleansed.index.values).apply(list)
-        return list(cleansed.itertuples(index=False, name=None))
+        logger.debug(f"index_cols: {index_cols}")
+        logger.debug(f"Before: {cleansed.columns.values.tolist()}")
+        temp_index_cols = list(range(len(index_cols)))
+        logger.debug(f"temp_index_cols: {temp_index_cols}")
+        cleansed = cleansed.reset_index(names=temp_index_cols, drop=False)
+        logger.debug(f"After: {cleansed.columns.values.tolist()}")
+        cleansed["index_cols"] = cleansed[temp_index_cols].apply(list, axis=1)
+        cleansed.drop(columns=temp_index_cols, inplace=True, errors="ignore")
+        return list(cleansed[np.roll(cleansed.columns.values, 1).tolist()].itertuples(index=False, name=None))g
 {% endmacro %}
