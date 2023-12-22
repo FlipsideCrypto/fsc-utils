@@ -507,5 +507,5 @@ class FlattenRows:
         logger.debug(f"After: {cleansed.columns.values.tolist()}")
         cleansed["index_cols"] = cleansed[temp_index_cols].apply(list, axis=1)
         cleansed.drop(columns=temp_index_cols, inplace=True, errors="ignore")
-        return list(cleansed[np.roll(cleansed.columns.values, 1).tolist()].itertuples(index=False, name=None))g
+        return list(cleansed[np.roll(cleansed.columns.values, 1).tolist()].itertuples(index=False, name=None))
 {% endmacro %}
