@@ -499,12 +499,8 @@ class FlattenRows:
         overflow = cleansed["value_"].astype(str).apply(len) > VARCHAR_MAX
 
         cleansed.loc[overflow, ["value_"]] = None
-        logger.debug(f"index_cols: {index_cols}")
-        logger.debug(f"Before: {cleansed.columns.values.tolist()}")
         temp_index_cols = list(range(len(index_cols)))
-        logger.debug(f"temp_index_cols: {temp_index_cols}")
         cleansed = cleansed.reset_index(names=temp_index_cols, drop=False)
-        logger.debug(f"After: {cleansed.columns.values.tolist()}")
         cleansed["index_cols"] = cleansed[temp_index_cols].apply(list, axis=1)
         cleansed.drop(columns=temp_index_cols, inplace=True, errors="ignore")
         return list(cleansed[np.roll(cleansed.columns.values, 1).tolist()].itertuples(index=False, name=None))
