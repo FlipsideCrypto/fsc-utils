@@ -120,9 +120,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro if_data_call_wait(
-        seconds
-    ) %}
+{% macro if_data_call_wait() %}
     {% if var(
             "STREAMLINE_INVOKE_STREAMS"
         ) %}
@@ -153,7 +151,7 @@
                 system$wait(
                     {{ var(
                         "WAIT",
-                        {{ seconds }}
+                        400
                     ) }}
                 ) {% endset %}
                 {% do run_query(wait_query) %}
