@@ -124,7 +124,7 @@ WHERE
             AND b.partition_key = s.{{ partition_column }}
             {% if evm_balances %}
             JOIN {{ ref('_block_ranges') }} r
-            ON r.block_number = s.block_number
+            ON r.block_number = s.COALESCE(VALUE :"BLOCK_NUMBER" :: INT,VALUE :"block_number" :: INT)
             {% endif %}
         WHERE
             b.partition_key = s.{{ partition_column }}
@@ -168,7 +168,7 @@ FROM
     AND b.partition_key = s.{{ partition_column }}
     {% if evm_balances %}
     JOIN {{ ref('_block_ranges') }} r
-    ON r.block_number = s.block_number
+    ON r.block_number = s.COALESCE(VALUE :"BLOCK_NUMBER" :: INT,VALUE :"block_number" :: INT)
     {% endif %}
 WHERE
     b.partition_key = s.{{ partition_column }}
