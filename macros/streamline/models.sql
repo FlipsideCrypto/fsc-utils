@@ -91,7 +91,8 @@ WHERE
 {% macro streamline_external_table_query_v2(
         model,
         partition_function,
-        partition_column="partition_key"
+        partition_column="partition_key",
+        evm_balances=False
     ) %}
     WITH meta AS (
         SELECT
@@ -109,6 +110,9 @@ WHERE
             s.*,
             b.file_name,
             _inserted_timestamp
+            {% if evm_balances %}
+            , r.block_timestamp :: TIMESTAMP AS block_timestamp
+            {% endif %}
         FROM
             {{ source(
                 "bronze_streamline",
@@ -118,16 +122,21 @@ WHERE
             JOIN meta b
             ON b.file_name = metadata$filename
             AND b.partition_key = s.{{ partition_column }}
+            {% if evm_balances %}
+            JOIN {{ ref('_block_ranges') }} r
+            ON r.block_number = s.block_number
+            {% endif %}
         WHERE
             b.partition_key = s.{{ partition_column }}
             AND DATA :error IS NULL
-            AND DATA is not null
+            AND DATA IS NOT NULL
 {% endmacro %}
 
 {% macro streamline_external_table_FR_query_v2(
         model,
         partition_function,
-        partition_column="partition_key"
+        partition_column="partition_key",
+        evm_balances=False
     ) %}
     WITH meta AS (
         SELECT
@@ -145,6 +154,9 @@ SELECT
     s.*,
     b.file_name,
     _inserted_timestamp
+    {% if evm_balances %}
+    , r.block_timestamp :: TIMESTAMP AS block_timestamp
+    {% endif %}
 FROM
     {{ source(
         "bronze_streamline",
@@ -154,8 +166,12 @@ FROM
     JOIN meta b
     ON b.file_name = metadata$filename
     AND b.partition_key = s.{{ partition_column }}
+    {% if evm_balances %}
+    JOIN {{ ref('_block_ranges') }} r
+    ON r.block_number = s.block_number
+    {% endif %}
 WHERE
     b.partition_key = s.{{ partition_column }}
     AND DATA :error IS NULL
-    AND DATA is not null
+    AND DATA IS NOT NULL
 {% endmacro %}
