@@ -90,7 +90,8 @@ WHERE
 
 {% macro streamline_external_table_query_v2(
         model,
-        partition_function
+        partition_function,
+        partition_column="partition_key"
     ) %}
     WITH meta AS (
         SELECT
@@ -116,16 +117,17 @@ WHERE
             s
             JOIN meta b
             ON b.file_name = metadata$filename
-            AND b.partition_key = s.partition_key
+            AND b.partition_key = s.{{ partition_column }}
         WHERE
-            b.partition_key = s.partition_key
+            b.partition_key = s.{{ partition_column }}
             AND DATA :error IS NULL
             AND DATA is not null
 {% endmacro %}
 
 {% macro streamline_external_table_FR_query_v2(
         model,
-        partition_function
+        partition_function,
+        partition_column="partition_key"
     ) %}
     WITH meta AS (
         SELECT
@@ -151,9 +153,9 @@ FROM
     s
     JOIN meta b
     ON b.file_name = metadata$filename
-    AND b.partition_key = s.partition_key
+    AND b.partition_key = s.{{ partition_column }}
 WHERE
-    b.partition_key = s.partition_key
+    b.partition_key = s.{{ partition_column }}
     AND DATA :error IS NULL
     AND DATA is not null
 {% endmacro %}
