@@ -109,7 +109,7 @@ WHERE
         SELECT
             s.*,
             b.file_name,
-            _inserted_timestamp
+            b._inserted_timestamp
             {% if evm_balances %}
             , r.block_timestamp :: TIMESTAMP AS block_timestamp
             {% endif %}
@@ -153,7 +153,7 @@ WHERE
 SELECT
     s.*,
     b.file_name,
-    _inserted_timestamp
+    b._inserted_timestamp
     {% if evm_balances %}
     , r.block_timestamp :: TIMESTAMP AS block_timestamp
     {% endif %}
