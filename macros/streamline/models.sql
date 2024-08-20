@@ -216,6 +216,8 @@ WHERE
             b._partition_by_block_number = s._partition_by_block_number
             AND b._partition_by_created_date = s._partition_by_created_date
             AND s._partition_by_created_date >= DATEADD('day', -2, CURRENT_TIMESTAMP())
+            AND DATA :error IS NULL
+            AND DATA IS NOT NULL
 {% endmacro %}
 
 {% macro streamline_external_table_FR_query_decoder(
@@ -258,4 +260,6 @@ WHERE
     WHERE
         b._partition_by_block_number = s._partition_by_block_number
         AND b._partition_by_created_date = s._partition_by_created_date
+        AND DATA :error IS NULL
+        AND DATA IS NOT NULL
 {% endmacro %}
