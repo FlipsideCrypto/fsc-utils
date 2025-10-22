@@ -281,5 +281,18 @@
   sql: |
     {{ fsc_utils.create_udf_stablecoin_data_parse() | indent(4) }}
 
+- name: {{ schema }}.udf_decompress_zlib
+  signature:
+    - [compressed_string, STRING]
+  return_type: STRING
+  options: |
+    LANGUAGE PYTHON
+    RUNTIME_VERSION = '3.10'
+    HANDLER = 'decompress_zlib'
+    IMMUTABLE
+    COMMENT = 'Decompresses zlib/deflate-compressed data from Python bytes literal string format returned by udf_api_v2'
+  sql: |
+    {{ fsc_utils.create_udf_decompress_zlib() | indent(4) }}
+
 {% endmacro %}
 
