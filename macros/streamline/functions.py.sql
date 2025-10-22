@@ -541,3 +541,34 @@ class FlattenRows:
         cleansed.drop(columns=temp_index_cols, inplace=True, errors="ignore")
         return list(cleansed[np.roll(cleansed.columns.values, 1).tolist()].itertuples(index=False, name=None))
 {% endmacro %}
+
+{% macro create_udf_decompress_zlib() %}
+import zlib
+import codecs
+
+def decompress_zlib(compressed_string):
+    try:
+        if not compressed_string:
+            return None
+
+        # Remove b prefix and suffix if present
+        if compressed_string.startswith("b'") and compressed_string.endswith("'"):
+            compressed_string = compressed_string[2:-1]
+        elif compressed_string.startswith('b"') and compressed_string.endswith('"'):
+            compressed_string = compressed_string[2:-1]
+
+        # Decode the escaped string to bytes
+        compressed_bytes = codecs.decode(compressed_string, 'unicode_escape')
+
+        # Convert to bytes if string
+        if isinstance(compressed_bytes, str):
+            compressed_bytes = compressed_bytes.encode('latin-1')
+
+        # Decompress the zlib data
+        decompressed = zlib.decompress(compressed_bytes)
+
+        # Return as UTF-8 string
+        return decompressed.decode('utf-8')
+    except Exception as e:
+        return f"Error decompressing: {str(e)}"
+{% endmacro %}

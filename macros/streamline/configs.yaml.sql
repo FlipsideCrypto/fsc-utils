@@ -254,5 +254,17 @@
   sql: |
     {{ fsc_utils.create_udtf_flatten_overflowed_responses() | indent(4) }}
 
+- name: {{ schema }}.udf_decompress_zlib
+  signature:
+    - [compressed_string, STRING]
+  return_type: STRING
+  options: |
+    LANGUAGE PYTHON
+    RUNTIME_VERSION = '3.10'
+    COMMENT = 'Decompresses zlib/deflate-compressed data from Python bytes literal string format'
+    HANDLER = 'decompress_zlib'
+  sql: |
+    {{ fsc_utils.create_udf_decompress_zlib() | indent(4) }}
+
 {% endmacro %}
 
