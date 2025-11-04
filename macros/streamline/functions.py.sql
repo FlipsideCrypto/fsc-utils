@@ -571,6 +571,8 @@ def decompress_zlib(compressed_string):
         return decompressed.decode('utf-8')
     except Exception as e:
         return f"Error decompressing: {str(e)}"
+{% endmacro %}
+
 {% macro create_udf_stablecoin_data_parse() %}
 import re
 
