@@ -293,5 +293,19 @@
   sql: |
     {{ fsc_utils.create_udf_stablecoin_data_parse() | indent(4) }}
 
+- name: {{ schema }}.udf_encode_contract_call
+  signature:
+    - [function_abi, VARIANT]
+    - [input_values, ARRAY]
+  return_type: STRING
+  options: |
+    LANGUAGE PYTHON
+    RUNTIME_VERSION = '3.10'
+    PACKAGES = ('eth-abi')
+    HANDLER = 'encode_call'
+    COMMENT = '{{ fsc_utils.udf_encode_contract_call_comment() }}'
+  sql: |
+    {{ fsc_utils.create_udf_encode_contract_call() | indent(4) }}
+
 {% endmacro %}
 
