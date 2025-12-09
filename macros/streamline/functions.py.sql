@@ -1128,9 +1128,6 @@ ERROR HANDLING:
 RELATED FUNCTIONS:
   - utils.udf_evm_text_signature: Generate function signature
   - utils.udf_keccak256: Calculate function selector
-  - streamline_dev.utils.udf_evm_decode_trace: Decode call results
+  - utils.udf_evm_decode_trace: Decode call results
 
-VERSION: 1.0
-AUTHOR: Flipside Crypto Data Engineering
-LAST UPDATED: 2024-12-09
 {% endmacro %}
