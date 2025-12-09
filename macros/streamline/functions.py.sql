@@ -1044,14 +1044,14 @@ RETURNS:
 EXAMPLES:
 
   -- Simple function with no inputs
-  SELECT crosschain_dev.utils.udf_encode_contract_call(
+  SELECT utils.udf_encode_contract_call(
     PARSE_JSON(''{"name": "totalSupply", "inputs": []}''),
     ARRAY_CONSTRUCT()
   );
   -- Returns: 0x18160ddd
 
   -- Function with single address parameter
-  SELECT crosschain_dev.utils.udf_encode_contract_call(
+  SELECT utils.udf_encode_contract_call(
     PARSE_JSON(''{
       "name": "balanceOf",
       "inputs": [{"name": "account", "type": "address"}]
@@ -1061,7 +1061,7 @@ EXAMPLES:
   -- Returns: 0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
 
   -- Function with multiple parameters
-  SELECT crosschain_dev.utils.udf_encode_contract_call(
+  SELECT utils.udf_encode_contract_call(
     PARSE_JSON(''{
       "name": "transfer",
       "inputs": [
@@ -1073,7 +1073,7 @@ EXAMPLES:
   );
 
   -- Complex function with nested tuples
-  SELECT crosschain_dev.utils.udf_encode_contract_call(
+  SELECT utils.udf_encode_contract_call(
     PARSE_JSON(''{
       "name": "swap",
       "inputs": [{
