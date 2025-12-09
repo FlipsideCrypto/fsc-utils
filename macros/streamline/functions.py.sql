@@ -1100,7 +1100,7 @@ TYPICAL WORKFLOW:
   2. Prepare input values as Snowflake arrays
   3. Encode using this function
   4. Execute via eth_call RPC (ai.live.udf_api)
-  5. Decode response using streamline_dev.utils.udf_evm_decode_trace
+  5. Decode response using utils.udf_evm_decode_trace
 
 SUPPORTED TYPES:
   - address: Ethereum addresses
