@@ -303,7 +303,8 @@
     RUNTIME_VERSION = '3.10'
     PACKAGES = ('eth-abi')
     HANDLER = 'encode_call'
-    COMMENT = '{{ fsc_utils.udf_encode_contract_call_comment() }}'
+    COMMENT = |
+      {{ fsc_utils.udf_encode_contract_call_comment() }}
   sql: |
     {{ fsc_utils.create_udf_encode_contract_call() | indent(4) }}
 
@@ -367,7 +368,8 @@
     NULL
     LANGUAGE SQL
     STRICT IMMUTABLE
-    COMMENT = '{{ fsc_utils.udf_create_eth_call_from_abi_comment() }}'
+    COMMENT = |
+      {{ fsc_utils.udf_create_eth_call_from_abi_comment() }}
   sql: |
     {{ schema }}.udf_create_eth_call(
       contract_address,
@@ -385,7 +387,8 @@
     NULL
     LANGUAGE SQL
     STRICT IMMUTABLE
-    COMMENT = '{{ fsc_utils.udf_create_eth_call_from_abi_comment() }}'
+    COMMENT = |
+      {{ fsc_utils.udf_create_eth_call_from_abi_comment() }}
   sql: |
     {{ schema }}.udf_create_eth_call(
       contract_address,
