@@ -785,3 +785,458 @@ class udf_stablecoin_data_parse:
         except Exception as error:
             raise Exception(f'Error parsing peggedData content: {str(error)}')
 {% endmacro %}
+
+{% macro create_udf_encode_contract_call() %}
+
+def encode_call(function_abi, input_values):
+    """
+    Encodes EVM contract function calls into ABI-encoded calldata.
+    
+    This function generates complete calldata (selector + encoded params) that can be
+    used directly in eth_call JSON-RPC requests to query contract state.
+    """
+    import eth_abi
+    from eth_hash.auto import keccak
+    import json
+    
+    def get_function_signature(abi):
+        """
+        Generate function signature using the same logic as utils.udf_evm_text_signature.
+        
+        Examples:
+          balanceOf(address)
+          transfer(address,uint256)
+          swap((address,address,uint256))
+        """
+        def generate_signature(inputs):
+            signature_parts = []
+            for input_data in inputs:
+                if 'components' in input_data:
+                    # Handle nested tuples
+                    component_signature_parts = []
+                    components = input_data['components']
+                    component_signature_parts.extend(generate_signature(components))
+                    component_signature_parts[-1] = component_signature_parts[-1].rstrip(",")
+                    if input_data['type'].endswith('[]'):
+                        signature_parts.append("(" + "".join(component_signature_parts) + ")[],")
+                    else:
+                        signature_parts.append("(" + "".join(component_signature_parts) + "),")
+                else:
+                    # Clean up Solidity-specific modifiers
+                    signature_parts.append(input_data['type'].replace('enum ', '').replace(' payable', '') + ",")
+            return signature_parts
+
+        signature_parts = [abi['name'] + "("]
+        signature_parts.extend(generate_signature(abi.get('inputs', [])))
+        if len(signature_parts) > 1:
+            signature_parts[-1] = signature_parts[-1].rstrip(",") + ")"
+        else:
+            signature_parts.append(")")
+        return "".join(signature_parts)
+    
+    def function_selector(abi):
+        """Calculate 4-byte function selector using Keccak256 hash."""
+        signature = get_function_signature(abi)
+        hash_bytes = keccak(signature.encode('utf-8'))
+        return hash_bytes[:4].hex(), signature
+    
+    def get_canonical_type(input_spec):
+        """
+        Convert ABI input spec to canonical type string for eth_abi encoding.
+        
+        Handles tuple expansion: tuple -> (address,uint256,bytes)
+        """
+        param_type = input_spec['type']
+        
+        if param_type.startswith('tuple'):
+            components = input_spec.get('components', [])
+            component_types = ','.join([get_canonical_type(comp) for comp in components])
+            canonical = f"({component_types})"
+            
+            # Preserve array suffixes: tuple[] -> (address,uint256)[]
+            if param_type.endswith('[]'):
+                array_suffix = param_type[5:]  # Everything after 'tuple'
+                canonical += array_suffix
+            
+            return canonical
+        
+        return param_type
+    
+    def prepare_value(value, param_type, components=None):
+        """
+        Convert Snowflake values to Python types suitable for eth_abi encoding.
+        
+        Handles type coercion and format normalization for all Solidity types.
+        """
+        # Handle null/None values with sensible defaults
+        if value is None:
+            if param_type.startswith('uint') or param_type.startswith('int'):
+                return 0
+            elif param_type == 'address':
+                return '0x' + '0' * 40
+            elif param_type == 'bool':
+                return False
+            elif param_type.startswith('bytes'):
+                return b''
+            else:
+                return value
+        
+        # CRITICAL: Check arrays FIRST (before base types)
+        # This prevents bytes[] from matching the bytes check
+        if param_type.endswith('[]'):
+            base_type = param_type[:-2]
+            if not isinstance(value, list):
+                return []
+            
+            # Special handling for tuple arrays
+            if base_type == 'tuple' and components:
+                return [prepare_tuple(v, components) for v in value]
+            else:
+                return [prepare_value(v, base_type) for v in value]
+        
+        # Base type conversions
+        if param_type == 'address':
+            addr = str(value).lower()
+            if not addr.startswith('0x'):
+                addr = '0x' + addr
+            return addr
+        
+        if param_type.startswith('uint') or param_type.startswith('int'):
+            return int(value)
+        
+        if param_type == 'bool':
+            if isinstance(value, str):
+                return value.lower() in ('true', '1', 'yes')
+            return bool(value)
+        
+        if param_type.startswith('bytes'):
+            if isinstance(value, str):
+                if value.startswith('0x'):
+                    value = value[2:]
+                return bytes.fromhex(value)
+            return value
+        
+        if param_type == 'string':
+            return str(value)
+        
+        return value
+    
+    def prepare_tuple(value, components):
+        """
+        Recursively prepare tuple values, handling nested structures.
+        
+        Tuples can contain other tuples, arrays, or tuple arrays.
+        """
+        if not isinstance(value, (list, tuple)):
+            # Support dict-style input (by component name)
+            if isinstance(value, dict):
+                value = [value.get(comp.get('name', f'field_{i}')) 
+                        for i, comp in enumerate(components)]
+            else:
+                return value
+        
+        result = []
+        for i, comp in enumerate(components):
+            if i >= len(value):
+                result.append(None)
+                continue
+                
+            comp_type = comp['type']
+            val = value[i]
+            
+            # Handle tuple arrays within tuples
+            if comp_type.endswith('[]') and comp_type.startswith('tuple'):
+                sub_components = comp.get('components', [])
+                result.append(prepare_value(val, comp_type, sub_components))
+            elif comp_type.startswith('tuple'):
+                # Single tuple (not array)
+                sub_components = comp.get('components', [])
+                result.append(prepare_tuple(val, sub_components))
+            else:
+                result.append(prepare_value(val, comp_type))
+        
+        return tuple(result)
+    
+    try:
+        inputs = function_abi.get('inputs', [])
+        
+        # Calculate selector using battle-tested signature generation
+        selector_hex, signature = function_selector(function_abi)
+        
+        # Functions with no inputs only need the selector
+        if not inputs:
+            return '0x' + selector_hex
+        
+        # Prepare values for encoding
+        prepared_values = []
+        for i, inp in enumerate(inputs):
+            if i >= len(input_values):
+                prepared_values.append(None)
+                continue
+            
+            value = input_values[i]
+            param_type = inp['type']
+            
+            # Handle tuple arrays at top level
+            if param_type.endswith('[]') and param_type.startswith('tuple'):
+                components = inp.get('components', [])
+                prepared_values.append(prepare_value(value, param_type, components))
+            elif param_type.startswith('tuple'):
+                # Single tuple (not array)
+                components = inp.get('components', [])
+                prepared_values.append(prepare_tuple(value, components))
+            else:
+                prepared_values.append(prepare_value(value, param_type))
+        
+        # Get canonical type strings for eth_abi (expands tuples)
+        types = [get_canonical_type(inp) for inp in inputs]
+        
+        # Encode parameters using eth_abi
+        encoded_params = eth_abi.encode(types, prepared_values).hex()
+        
+        # Return complete calldata: selector + encoded params
+        return '0x' + selector_hex + encoded_params
+        
+    except Exception as e:
+        # Return structured error for debugging
+        import traceback
+        return json.dumps({
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'function': function_abi.get('name', 'unknown'),
+            'signature': signature if 'signature' in locals() else 'not computed',
+            'selector': '0x' + selector_hex if 'selector_hex' in locals() else 'not computed',
+            'types': types if 'types' in locals() else 'not computed'
+        })
+
+{% endmacro %}
+
+{% macro udf_encode_contract_call_comment() %}
+Encodes EVM contract function calls into hex calldata format for eth_call RPC requests.
+
+PURPOSE:
+  Converts human-readable function parameters into ABI-encoded calldata that can be sent
+  to Ethereum nodes via JSON-RPC. Handles all Solidity types including complex nested
+  structures like tuples and arrays.
+
+PARAMETERS:
+  function_abi (VARIANT): 
+    - JSON object containing the function ABI definition
+    - Must include: "name" (string) and "inputs" (array of input definitions)
+    - Each input needs: "name", "type", and optionally "components" for tuples
+    
+  input_values (ARRAY):
+    - Array of values matching the function inputs in order
+    - Values should be provided as native Snowflake types:
+      * addresses: strings (with or without 0x prefix)
+      * uint/int: numbers
+      * bool: booleans
+      * bytes/bytes32: hex strings (with or without 0x prefix)
+      * arrays: Snowflake arrays
+      * tuples: Snowflake arrays in component order
+
+RETURNS:
+  STRING: Complete calldata as hex string with 0x prefix
+    - Format: 0x{4-byte selector}{encoded parameters}
+    - Can be used directly in eth_call RPC requests
+    - Returns JSON error object if encoding fails
+
+EXAMPLES:
+
+  -- Simple function with no inputs
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON(''{"name": "totalSupply", "inputs": []}''),
+    ARRAY_CONSTRUCT()
+  );
+  -- Returns: 0x18160ddd
+
+  -- Function with single address parameter
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON(''{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }''),
+    ARRAY_CONSTRUCT(''0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'')
+  );
+  -- Returns: 0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+
+  -- Function with multiple parameters
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON(''{
+      "name": "transfer",
+      "inputs": [
+        {"name": "to", "type": "address"},
+        {"name": "amount", "type": "uint256"}
+      ]
+    }''),
+    ARRAY_CONSTRUCT(''0x1234567890123456789012345678901234567890'', 1000000)
+  );
+
+  -- Complex function with nested tuples
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON(''{
+      "name": "swap",
+      "inputs": [{
+        "name": "params",
+        "type": "tuple",
+        "components": [
+          {"name": "tokenIn", "type": "address"},
+          {"name": "tokenOut", "type": "address"},
+          {"name": "amountIn", "type": "uint256"}
+        ]
+      }]
+    }''),
+    ARRAY_CONSTRUCT(
+      ARRAY_CONSTRUCT(
+        ''0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'',
+        ''0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'',
+        1000000
+      )
+    )
+  );
+
+TYPICAL WORKFLOW:
+  1. Get function ABI from crosschain.evm.dim_contract_abis
+  2. Prepare input values as Snowflake arrays
+  3. Encode using this function
+  4. Execute via eth_call RPC (live.udf_api)
+  5. Decode response using utils.udf_evm_decode_trace
+
+SUPPORTED TYPES:
+  - address: Ethereum addresses
+  - uint8, uint16, ..., uint256: Unsigned integers
+  - int8, int16, ..., int256: Signed integers
+  - bool: Boolean values
+  - bytes, bytes1, ..., bytes32: Fixed and dynamic byte arrays
+  - string: Dynamic strings
+  - Arrays: Any type followed by []
+  - Tuples: Nested structures with components
+  - Nested combinations: tuple[], tuple[][], etc.
+
+NOTES:
+  - Function selector is automatically calculated using Keccak256
+  - Compatible with existing utils.udf_evm_text_signature and utils.udf_keccak256
+  - Handles gas-optimized function names (e.g., selector 0x00000000)
+  - Tuples must be provided as arrays in component order
+  - Empty arrays are valid for array-type parameters
+
+ERROR HANDLING:
+  - Returns JSON error object on failure
+  - Check if result starts with "{" to detect errors
+  - Error object includes: error message, traceback, function name, types
+
+RELATED FUNCTIONS:
+  - utils.udf_evm_text_signature: Generate function signature
+  - utils.udf_keccak256: Calculate function selector
+  - utils.udf_evm_decode_trace: Decode call results
+
+{% endmacro %}
+
+{% macro udf_create_eth_call_from_abi_comment() %}
+Convenience function that combines contract call encoding and JSON-RPC request creation for eth_call.
+
+PURPOSE:
+  Simplifies the workflow of creating eth_call JSON-RPC requests by combining ABI encoding
+  and RPC call construction into a single function call. This is the recommended approach for
+  most use cases where you want to query contract state via eth_call.
+
+PARAMETERS:
+  contract_address (STRING):
+    - Ethereum contract address (with or without 0x prefix)
+    - Example: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    
+  function_abi (VARIANT):
+    - JSON object containing the function ABI definition
+    - Must include: "name" (string) and "inputs" (array of input definitions)
+    - Each input needs: "name", "type", and optionally "components" for tuples
+    - Can be retrieved from tables like crosschain.evm.dim_contract_abis or ethereum.silver.flat_function_abis
+    
+  input_values (ARRAY):
+    - Array of values matching the function inputs in order
+    - Values should be provided as native Snowflake types:
+      * addresses: strings (with or without 0x prefix)
+      * uint/int: numbers
+      * bool: booleans
+      * bytes/bytes32: hex strings (with or without 0x prefix)
+      * arrays: Snowflake arrays
+      * tuples: Snowflake arrays in component order
+  
+  block_parameter (VARIANT, optional):
+    - Block identifier for the eth_call request
+    - If NULL or omitted: defaults to 'latest'
+    - If NUMBER: automatically converted to hex format (e.g., 18500000 -> '0x11a7f80')
+    - If STRING: used directly (e.g., 'latest', '0x11a7f80', 'pending')
+
+RETURNS:
+  OBJECT: Complete JSON-RPC request object ready for eth_call
+    - Format: {"jsonrpc": "2.0", "method": "eth_call", "params": [...], "id": "..."}
+    - Can be used directly with RPC execution functions like live.udf_api
+
+EXAMPLES:
+
+  -- Simple balanceOf call with default 'latest' block
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c')
+  );
+
+  -- Same call but at a specific block number
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c'),
+    18500000
+  );
+
+  -- Using ABI from a table
+  WITH abi_data AS (
+    SELECT 
+      abi,
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as contract_address,
+      '0xbcca60bb61934080951369a648fb03df4f96263c' as user_address
+    FROM ethereum.silver.flat_function_abis
+    WHERE contract_address = LOWER('0x43506849d7c04f9138d1a2050bbf3a0c054402dd')
+      AND function_name = 'balanceOf'
+  )
+  SELECT 
+    utils.udf_create_eth_call_from_abi(
+      contract_address,
+      abi,
+      ARRAY_CONSTRUCT(user_address)
+    ) as rpc_call
+  FROM abi_data;
+
+TYPICAL WORKFLOW:
+  1. Get function ABI from contract ABI tables (crosschain.evm.dim_contract_abis, etc.)
+  2. Prepare input values as Snowflake arrays matching the function signature
+  3. Call this function with contract address, ABI, and inputs
+  4. Execute the returned RPC call object via live.udf_api or similar
+  5. Decode the response using utils.udf_evm_decode_trace or similar decoder
+
+ADVANTAGES OVER MODULAR APPROACH:
+  - Single function call instead of two (encode + create)
+  - Cleaner, more readable SQL
+  - Better for AI systems (fewer steps to explain)
+  - Less error-prone (no intermediate variables)
+  - More intuitive function name
+
+WHEN TO USE MODULAR FUNCTIONS INSTEAD:
+  - When you need to reuse encoded calldata for multiple RPC calls
+  - When you need encoded calldata for transaction construction
+  - When building complex workflows with intermediate steps
+
+RELATED FUNCTIONS:
+  - utils.udf_encode_contract_call: Encode function calls to calldata (used internally)
+  - utils.udf_create_eth_call: Create RPC call from encoded calldata (used internally)
+  - utils.udf_evm_text_signature: Generate function signature from ABI
+  - utils.udf_keccak256: Calculate function selector hash
+  - utils.udf_evm_decode_trace: Decode eth_call response results
+
+{% endmacro %}
