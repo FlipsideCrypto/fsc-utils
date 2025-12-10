@@ -1099,7 +1099,7 @@ TYPICAL WORKFLOW:
   1. Get function ABI from crosschain.evm.dim_contract_abis
   2. Prepare input values as Snowflake arrays
   3. Encode using this function
-  4. Execute via eth_call RPC (ai.live.udf_api)
+  4. Execute via eth_call RPC (live.udf_api)
   5. Decode response using utils.udf_evm_decode_trace
 
 SUPPORTED TYPES:
@@ -1129,5 +1129,114 @@ RELATED FUNCTIONS:
   - utils.udf_evm_text_signature: Generate function signature
   - utils.udf_keccak256: Calculate function selector
   - utils.udf_evm_decode_trace: Decode call results
+
+{% endmacro %}
+
+{% macro udf_create_eth_call_from_abi_comment() %}
+Convenience function that combines contract call encoding and JSON-RPC request creation for eth_call.
+
+PURPOSE:
+  Simplifies the workflow of creating eth_call JSON-RPC requests by combining ABI encoding
+  and RPC call construction into a single function call. This is the recommended approach for
+  most use cases where you want to query contract state via eth_call.
+
+PARAMETERS:
+  contract_address (STRING):
+    - Ethereum contract address (with or without 0x prefix)
+    - Example: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    
+  function_abi (VARIANT):
+    - JSON object containing the function ABI definition
+    - Must include: "name" (string) and "inputs" (array of input definitions)
+    - Each input needs: "name", "type", and optionally "components" for tuples
+    - Can be retrieved from tables like crosschain.evm.dim_contract_abis or ethereum.silver.flat_function_abis
+    
+  input_values (ARRAY):
+    - Array of values matching the function inputs in order
+    - Values should be provided as native Snowflake types:
+      * addresses: strings (with or without 0x prefix)
+      * uint/int: numbers
+      * bool: booleans
+      * bytes/bytes32: hex strings (with or without 0x prefix)
+      * arrays: Snowflake arrays
+      * tuples: Snowflake arrays in component order
+  
+  block_parameter (VARIANT, optional):
+    - Block identifier for the eth_call request
+    - If NULL or omitted: defaults to 'latest'
+    - If NUMBER: automatically converted to hex format (e.g., 18500000 -> '0x11a7f80')
+    - If STRING: used directly (e.g., 'latest', '0x11a7f80', 'pending')
+
+RETURNS:
+  OBJECT: Complete JSON-RPC request object ready for eth_call
+    - Format: {"jsonrpc": "2.0", "method": "eth_call", "params": [...], "id": "..."}
+    - Can be used directly with RPC execution functions like live.udf_api
+
+EXAMPLES:
+
+  -- Simple balanceOf call with default 'latest' block
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xBcca60bB61934080951369a648Fb03DF4F96263C')
+  );
+
+  -- Same call but at a specific block number
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xBcca60bB61934080951369a648Fb03DF4F96263C'),
+    18500000
+  );
+
+  -- Using ABI from a table
+  WITH abi_data AS (
+    SELECT 
+      abi,
+      '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as contract_address,
+      '0xBcca60bB61934080951369a648Fb03DF4F96263C' as user_address
+    FROM ethereum.silver.flat_function_abis
+    WHERE contract_address = LOWER('0x43506849D7C04F9138D1A2050bbF3A0c054402dd')
+      AND function_name = 'balanceOf'
+  )
+  SELECT 
+    utils.udf_create_eth_call_from_abi(
+      contract_address,
+      abi,
+      ARRAY_CONSTRUCT(user_address)
+    ) as rpc_call
+  FROM abi_data;
+
+TYPICAL WORKFLOW:
+  1. Get function ABI from contract ABI tables (crosschain.evm.dim_contract_abis, etc.)
+  2. Prepare input values as Snowflake arrays matching the function signature
+  3. Call this function with contract address, ABI, and inputs
+  4. Execute the returned RPC call object via live.udf_api or similar
+  5. Decode the response using utils.udf_evm_decode_trace or similar decoder
+
+ADVANTAGES OVER MODULAR APPROACH:
+  - Single function call instead of two (encode + create)
+  - Cleaner, more readable SQL
+  - Better for AI systems (fewer steps to explain)
+  - Less error-prone (no intermediate variables)
+  - More intuitive function name
+
+WHEN TO USE MODULAR FUNCTIONS INSTEAD:
+  - When you need to reuse encoded calldata for multiple RPC calls
+  - When you need encoded calldata for transaction construction
+  - When building complex workflows with intermediate steps
+
+RELATED FUNCTIONS:
+  - utils.udf_encode_contract_call: Encode function calls to calldata (used internally)
+  - utils.udf_create_eth_call: Create RPC call from encoded calldata (used internally)
+  - utils.udf_evm_text_signature: Generate function signature from ABI
+  - utils.udf_keccak256: Calculate function selector hash
+  - utils.udf_evm_decode_trace: Decode eth_call response results
 
 {% endmacro %}
