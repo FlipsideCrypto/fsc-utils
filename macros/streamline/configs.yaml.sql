@@ -351,7 +351,7 @@
         CASE
           WHEN block_parameter IS NULL THEN 'latest'
           WHEN TYPEOF(block_parameter) IN ('INTEGER', 'NUMBER', 'FIXED', 'FLOAT') THEN
-            {{ schema }}.udf_int_to_hex(block_parameter::NUMBER)
+            {{ database }}.{{ schema }}.udf_int_to_hex(block_parameter::NUMBER)
           ELSE block_parameter::STRING
         END
       )
