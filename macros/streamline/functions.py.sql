@@ -1056,7 +1056,7 @@ EXAMPLES:
       "name": "balanceOf",
       "inputs": [{"name": "account", "type": "address"}]
     }''),
-    ARRAY_CONSTRUCT(''0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'')
+    ARRAY_CONSTRUCT(''0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'')
   );
   -- Returns: 0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
 
@@ -1088,8 +1088,8 @@ EXAMPLES:
     }''),
     ARRAY_CONSTRUCT(
       ARRAY_CONSTRUCT(
-        ''0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'',
-        ''0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'',
+        ''0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'',
+        ''0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'',
         1000000
       )
     )
@@ -1143,7 +1143,7 @@ PURPOSE:
 PARAMETERS:
   contract_address (STRING):
     - Ethereum contract address (with or without 0x prefix)
-    - Example: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    - Example: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
     
   function_abi (VARIANT):
     - JSON object containing the function ABI definition
@@ -1176,22 +1176,22 @@ EXAMPLES:
 
   -- Simple balanceOf call with default 'latest' block
   SELECT utils.udf_create_eth_call_from_abi(
-    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     PARSE_JSON('{
       "name": "balanceOf",
       "inputs": [{"name": "account", "type": "address"}]
     }'),
-    ARRAY_CONSTRUCT('0xBcca60bB61934080951369a648Fb03DF4F96263C')
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c')
   );
 
   -- Same call but at a specific block number
   SELECT utils.udf_create_eth_call_from_abi(
-    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     PARSE_JSON('{
       "name": "balanceOf",
       "inputs": [{"name": "account", "type": "address"}]
     }'),
-    ARRAY_CONSTRUCT('0xBcca60bB61934080951369a648Fb03DF4F96263C'),
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c'),
     18500000
   );
 
@@ -1199,10 +1199,10 @@ EXAMPLES:
   WITH abi_data AS (
     SELECT 
       abi,
-      '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as contract_address,
-      '0xBcca60bB61934080951369a648Fb03DF4F96263C' as user_address
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as contract_address,
+      '0xbcca60bb61934080951369a648fb03df4f96263c' as user_address
     FROM ethereum.silver.flat_function_abis
-    WHERE contract_address = LOWER('0x43506849D7C04F9138D1A2050bbF3A0c054402dd')
+    WHERE contract_address = LOWER('0x43506849d7c04f9138d1a2050bbf3a0c054402dd')
       AND function_name = 'balanceOf'
   )
   SELECT 
