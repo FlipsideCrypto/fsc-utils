@@ -30,6 +30,18 @@
   sql: |
     {{ fsc_utils.python_udf_hex_to_int_with_encoding() | indent(4) }}
 
+
+- name: {{ schema }}.udf_int_to_hex
+  signature:
+    - [int, NUMBER]
+  return_type: VARCHAR(16777216)
+  options: |
+    NULL
+    LANGUAGE SQL
+    STRICT IMMUTABLE
+  sql: |
+    SELECT CONCAT('0x', TRIM(TO_CHAR(int, 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')))
+
 - name: {{ schema }}.udf_hex_to_string
   signature:
     - [hex, STRING]
@@ -303,7 +315,7 @@
     RUNTIME_VERSION = '3.10'
     PACKAGES = ('eth-abi')
     HANDLER = 'encode_call'
-    COMMENT = '{{ fsc_utils.udf_encode_contract_call_comment() }}'
+    COMMENT = 'Encodes EVM contract function calls into ABI-encoded calldata format for eth_call RPC requests. Handles all Solidity types including tuples and arrays.'
   sql: |
     {{ fsc_utils.create_udf_encode_contract_call() | indent(4) }}
 
@@ -367,7 +379,7 @@
     NULL
     LANGUAGE SQL
     STRICT IMMUTABLE
-    COMMENT = '{{ fsc_utils.udf_create_eth_call_from_abi_comment() }}'
+    COMMENT = 'Convenience function that combines contract call encoding and JSON-RPC request creation for eth_call. Encodes function call from ABI and creates RPC request with default block parameter "latest".'
   sql: |
     {{ schema }}.udf_create_eth_call(
       contract_address,
@@ -385,7 +397,7 @@
     NULL
     LANGUAGE SQL
     STRICT IMMUTABLE
-    COMMENT = '{{ fsc_utils.udf_create_eth_call_from_abi_comment() }}'
+    COMMENT = 'Convenience function that combines contract call encoding and JSON-RPC request creation for eth_call. Encodes function call from ABI and creates RPC request with specified block parameter.'
   sql: |
     {{ schema }}.udf_create_eth_call(
       contract_address,

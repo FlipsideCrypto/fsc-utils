@@ -159,6 +159,122 @@ The `fsc_utils` dbt package is a centralized repository consisting of various db
 
   ```
 
+- `utils.udf_encode_contract_call`: Encodes EVM contract function calls into ABI-encoded calldata format for eth_call RPC requests. Handles all Solidity types including tuples and arrays.
+
+  ```
+  -- Simple function with no inputs
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON('{"name": "totalSupply", "inputs": []}'),
+    ARRAY_CONSTRUCT()
+  );
+  -- Returns: 0x18160ddd
+
+  -- Function with single address parameter
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+  );
+  -- Returns: 0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+
+  -- Function with multiple parameters
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON('{
+      "name": "transfer",
+      "inputs": [
+        {"name": "to", "type": "address"},
+        {"name": "amount", "type": "uint256"}
+      ]
+    }'),
+    ARRAY_CONSTRUCT('0x1234567890123456789012345678901234567890', 1000000)
+  );
+
+  -- Complex function with nested tuples
+  SELECT utils.udf_encode_contract_call(
+    PARSE_JSON('{
+      "name": "swap",
+      "inputs": [{
+        "name": "params",
+        "type": "tuple",
+        "components": [
+          {"name": "tokenIn", "type": "address"},
+          {"name": "tokenOut", "type": "address"},
+          {"name": "amountIn", "type": "uint256"}
+        ]
+      }]
+    }'),
+    ARRAY_CONSTRUCT(
+      ARRAY_CONSTRUCT(
+        '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        1000000
+      )
+    )
+  );
+  ```
+
+- `utils.udf_create_eth_call`: Creates an eth_call JSON-RPC request object from contract address and encoded calldata. Supports block parameter as string or number (auto-converts numbers to hex).
+
+  ```
+  -- Using default 'latest' block
+  SELECT utils.udf_create_eth_call(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    '0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+  );
+
+  -- Using specific block number (auto-converted to hex)
+  SELECT utils.udf_create_eth_call(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    '0x70a08231000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    18500000
+  );
+  ```
+
+- `utils.udf_create_eth_call_from_abi`: Convenience function that combines contract call encoding and JSON-RPC request creation in a single call. Recommended for most use cases.
+
+  ```
+  -- Simple balanceOf call with default 'latest' block
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c')
+  );
+
+  -- Same call but at a specific block number
+  SELECT utils.udf_create_eth_call_from_abi(
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    PARSE_JSON('{
+      "name": "balanceOf",
+      "inputs": [{"name": "account", "type": "address"}]
+    }'),
+    ARRAY_CONSTRUCT('0xbcca60bb61934080951369a648fb03df4f96263c'),
+    18500000
+  );
+
+  -- Using ABI from a table
+  WITH abi_data AS (
+    SELECT 
+      abi,
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as contract_address,
+      '0xbcca60bb61934080951369a648fb03df4f96263c' as user_address
+    FROM ethereum.silver.flat_function_abis
+    WHERE contract_address = LOWER('0x43506849d7c04f9138d1a2050bbf3a0c054402dd')
+      AND function_name = 'balanceOf'
+  )
+  SELECT 
+    utils.udf_create_eth_call_from_abi(
+      contract_address,
+      abi,
+      ARRAY_CONSTRUCT(user_address)
+    ) as rpc_call
+  FROM abi_data;
+  ```
+
 ## **Streamline V 2.0 Functions**
 
 The `Streamline V 2.0` functions are a set of macros and UDFs that are designed to be used with `Streamline V 2.0` deployments.
