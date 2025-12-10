@@ -30,6 +30,18 @@
   sql: |
     {{ fsc_utils.python_udf_hex_to_int_with_encoding() | indent(4) }}
 
+
+- name: {{ schema }}.udf_int_to_hex
+  signature:
+    - [int, NUMBER]
+  return_type: VARCHAR(16777216)
+  options: |
+    NULL
+    LANGUAGE SQL
+    STRICT IMMUTABLE
+  sql: |
+    SELECT CONCAT('0x', TRIM(TO_CHAR(int, 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')))
+
 - name: {{ schema }}.udf_hex_to_string
   signature:
     - [hex, STRING]
@@ -351,7 +363,7 @@
         CASE
           WHEN block_parameter IS NULL THEN 'latest'
           WHEN TYPEOF(block_parameter) IN ('INTEGER', 'NUMBER', 'FIXED', 'FLOAT') THEN
-            {{ database }}.{{ schema }}.udf_int_to_hex(block_parameter::NUMBER)
+            {{ schema }}.udf_int_to_hex(block_parameter::NUMBER)
           ELSE block_parameter::STRING
         END
       )
