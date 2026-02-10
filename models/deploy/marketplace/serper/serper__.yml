@@ -1,0 +1,27 @@
+version: 2
+models:
+  - name: serper__
+    columns:
+      - name: search
+        tests:
+          - test_udf_without_context:
+              name: test_serper__search_returns_response
+              args: >
+                'ethereum blockchain'
+                , OBJECT_CONSTRUCT('num', 5)
+              assertions:
+                - result IS NOT NULL
+                - result:data:organic IS NOT NULL
+                - ARRAY_SIZE(result:data:organic) > 0
+
+      - name: search_and_extract
+        tests:
+          - test_udf_without_context:
+              name: test_serper__search_and_extract_returns_array
+              args: >
+                'bitcoin cryptocurrency'
+                , 5
+              assertions:
+                - ARRAY_SIZE(result) > 0
+                - result[0]:title IS NOT NULL
+                - result[0]:url IS NOT NULL
