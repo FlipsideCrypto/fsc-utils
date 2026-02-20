@@ -15,5 +15,6 @@ logs/
 **/.DS_Store
 .vscode/
 dbt-env/
+package-lock.yml
 .env
 .*
