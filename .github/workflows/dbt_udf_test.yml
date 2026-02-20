@@ -48,6 +48,6 @@ jobs:
     if: github.event_name == 'pull_request'
     secrets: inherit
     with:
-      warehouse: ${{ vars.WAREHOUSE }}
+      warehouse: DBT_CLOUD
       environment: dev
       command: dbt test --selector test_udfs_without_context --threads 5

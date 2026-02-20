@@ -1,42 +1,42 @@
 livequery:
-  target: "{{ env_var('TARGET') }}"
+  target: "{{ env_var('TARGET', 'dev') }}"
   outputs:
     dev:
       type: snowflake
-      account: "{{ env_var('ACCOUNT') }}"
-      role: "{{ env_var('ROLE') }}"
-      user: "{{ env_var('USER') }}"
-      password: "{{ env_var('PASSWORD') }}"
-      region: "{{ env_var('REGION') }}"
-      database: "{{ env_var('DATABASE') }}"
-      warehouse: "{{ env_var('WAREHOUSE') }}"
+      account: vna27887.us-east-1
+      role: DBT_CLOUD_LIVEQUERY
+      user: DBT_CLOUD_LIVEQUERY
+      private_key: "{{ env_var('PRIVATE_KEY', '') }}"
+      region: us-east-1
+      database: LIVEQUERY_DEV
+      warehouse: "{{ env_var('WAREHOUSE', 'DBT_CLOUD') }}"
       schema: LIVE
       threads: 24
-      client_session_keep_alive: False
+      client_session_keep_alive: false
       query_tag: dbt-livequery-dev
     prod:
       type: snowflake
-      account: "{{ env_var('ACCOUNT') }}"
-      role: "{{ env_var('ROLE') }}"
-      user: "{{ env_var('USER') }}"
-      password: "{{ env_var('PASSWORD') }}"
-      region: "{{ env_var('REGION') }}"
-      database: "{{ env_var('DATABASE') }}"
-      warehouse: "{{ env_var('WAREHOUSE') }}"
+      account: vna27887.us-east-1
+      role: DBT_CLOUD_LIVEQUERY
+      user: DBT_CLOUD_LIVEQUERY
+      private_key: "{{ env_var('PRIVATE_KEY', '') }}"
+      region: us-east-1
+      database: LIVEQUERY
+      warehouse: "{{ env_var('WAREHOUSE', 'DBT_CLOUD') }}"
       schema: LIVE
       threads: 24
-      client_session_keep_alive: False
+      client_session_keep_alive: false
       query_tag: dbt-livequery-prod
     hosted:
       type: snowflake
-      account: "{{ env_var('ACCOUNT') }}"
-      role: "{{ env_var('ROLE') }}"
-      user: "{{ env_var('USER') }}"
-      password: "{{ env_var('PASSWORD') }}"
-      region: "{{ env_var('REGION') }}"
-      database: "{{ env_var('DATABASE') }}"
-      warehouse: "{{ env_var('WAREHOUSE') }}"
+      account: gob41769.us-east-1
+      role: ACCOUNTADMIN
+      user: pro_admin
+      password: "{{ env_var('PASSWORD', '') }}"
+      region: us-east-1
+      database: LIVEQUERY
+      warehouse: "{{ env_var('WAREHOUSE', 'XSMALL') }}"
       schema: LIVE
       threads: 24
-      client_session_keep_alive: False
+      client_session_keep_alive: false
       query_tag: dbt-livequery-hosted-prod

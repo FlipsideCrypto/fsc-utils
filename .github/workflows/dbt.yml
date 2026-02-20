@@ -9,25 +9,18 @@ on:
         required: true
         type: string
       command:
-          required: true
-          type: string
+        required: true
+        type: string
       python_version:
-          required: false
-          type: string
-          default: "3.10"
+        required: false
+        type: string
+        default: "3.10"
 
 env:
   DBT_PROFILES_DIR: ./
-
-  ACCOUNT: ${{ vars.ACCOUNT }}
-  ROLE: ${{ vars.ROLE }}
-  USER: ${{ vars.USER }}
+  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
   PASSWORD: ${{ secrets.PASSWORD }}
-  REGION: ${{ vars.REGION }}
-  DATABASE: ${{ vars.DATABASE }}
-  WAREHOUSE: ${{ inputs.warehouse }}
-  SCHEMA: ${{ vars.SCHEMA }}
-  TARGET: ${{ vars.TARGET }}
+  TARGET: ${{ inputs.environment }}
 
 jobs:
   dbt:
@@ -35,7 +28,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
-      WAREHOUSE: ${{ inputs.warehouse || vars.WAREHOUSE }}
+      WAREHOUSE: ${{ inputs.warehouse }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
