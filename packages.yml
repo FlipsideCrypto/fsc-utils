@@ -1,3 +1,3 @@
 packages:
   - git: https://github.com/FlipsideCrypto/livequery-models.git
-    revision: fix/safe-target-name-config-fallback
+    revision: v1.12.0 
