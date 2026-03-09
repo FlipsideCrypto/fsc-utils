@@ -233,7 +233,7 @@
     It should only be used within an ephemeral model.
  #}
     {%- set schema = this.schema -%}
-    {%- set utility_schema = this.identifier -%}
+    {%- set utility_schema = model.name.split('__')[1] if '__' in model.name else this.identifier -%}
     {% if execute and (var("UPDATE_UDFS_AND_SPS") or var("DROP_UDFS_AND_SPS")) and model.unique_id in selected_resources %}
         {% set sql %}
             {% for config in configs %}
